@@ -102,10 +102,14 @@ create table if not exists fridge_door (
   id int primary key default 1 check (id = 1),
   upper_photo_url text,
   lower_photo_url text,
+  left_photo_url text,
   updated_at timestamptz default now() not null
 );
 
 insert into fridge_door (id) values (1) on conflict (id) do nothing;
+
+-- If table already exists without left_photo_url:
+-- alter table fridge_door add column if not exists left_photo_url text;
 
 alter table fridge_door enable row level security;
 

@@ -80,15 +80,19 @@ export default function ItemCard({ item, onEdit, onDelete }: Props) {
           </div>
           <div className="flex gap-1.5 mt-2">
             <button
+              type="button"
+              onPointerDown={e => e.stopPropagation()}
               onClick={e => { e.stopPropagation(); onEdit(item) }}
-              className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-sm bg-stone-200 text-stone-700 font-mono text-[9px] font-bold uppercase tracking-wider active:bg-stone-300"
+              className="relative z-10 flex-1 flex items-center justify-center gap-1 py-1.5 rounded-sm bg-stone-200 text-stone-700 font-mono text-[9px] font-bold uppercase tracking-wider active:bg-stone-300"
             >
               <Pencil size={10} />
               Edit
             </button>
             <button
+              type="button"
+              onPointerDown={e => e.stopPropagation()}
               onClick={e => { e.stopPropagation(); onDelete(item.id) }}
-              className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-sm bg-red-100 text-red-800 font-mono text-[9px] font-bold uppercase tracking-wider active:bg-red-200"
+              className="relative z-10 flex-1 flex items-center justify-center gap-1 py-1.5 rounded-sm bg-red-100 text-red-800 font-mono text-[9px] font-bold uppercase tracking-wider active:bg-red-200"
             >
               <Trash2 size={10} />
               Delete

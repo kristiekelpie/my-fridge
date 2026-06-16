@@ -17,6 +17,8 @@ export const viewport: Viewport = {
   maximumScale: 1,
 };
 
+export const dynamic = "force-dynamic";
+
 export default function RootLayout({
   children,
 }: {

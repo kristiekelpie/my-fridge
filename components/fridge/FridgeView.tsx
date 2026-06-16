@@ -7,7 +7,8 @@ import FridgeClosed from './FridgeClosed'
 import FridgeInteriorOpen from './FridgeInteriorOpen'
 import ZoneInterior from './ZoneInterior'
 import KitchenNotesView from '@/components/kitchen/KitchenNotesView'
-import { getLocalDoorPhotos, setLocalDoorPhoto } from '@/lib/doorPhotos'
+import { getLocalDoorPhotos, setLocalDoorPhoto, fileToResizedDataUrl, dataUrlToBlob, getSlotColumn } from '@/lib/doorPhotos'
+import { isSupabaseConfigured } from '@/lib/supabase/client'
 import type { PolaroidSlot } from './DoorPolaroid'
 
 interface Props {
@@ -27,6 +28,7 @@ export default function FridgeView({ items, onEdit, onDelete }: Props) {
   const [kitchenNotesOpen, setKitchenNotesOpen] = useState(false)
   const [upperPhotoUrl, setUpperPhotoUrl] = useState<string | null>(null)
   const [lowerPhotoUrl, setLowerPhotoUrl] = useState<string | null>(null)
+  const [leftPhotoUrl, setLeftPhotoUrl] = useState<string | null>(null)
   const fridgeRef = useRef<HTMLDivElement>(null)
 
   const itemCounts = ALL_ZONES.reduce((acc, zone) => {
@@ -41,27 +43,40 @@ export default function FridgeView({ items, onEdit, onDelete }: Props) {
   }).length
   const soon = items.filter(i => getExpiryStatus(i.expiry_date) === 'soon').length
 
+  const setPhotoForSlot = useCallback((slot: PolaroidSlot, url: string | null) => {
+    if (slot === 'upper') setUpperPhotoUrl(url)
+    else if (slot === 'lower') setLowerPhotoUrl(url)
+    else setLeftPhotoUrl(url)
+  }, [])
+
   const fetchDoorPhotos = useCallback(async () => {
-    const { data, error } = await supabase
-      .from('fridge_door')
-      .select('upper_photo_url, lower_photo_url')
-      .eq('id', 1)
-      .maybeSingle()
-
-    if (data) {
-      setUpperPhotoUrl(data.upper_photo_url ?? getLocalDoorPhotos().upper)
-      setLowerPhotoUrl(data.lower_photo_url ?? getLocalDoorPhotos().lower)
-      return
-    }
-
     const local = getLocalDoorPhotos()
     setUpperPhotoUrl(local.upper)
     setLowerPhotoUrl(local.lower)
-    if (error) console.warn('fridge_door fetch:', error.message)
+    setLeftPhotoUrl(local.left)
+
+    if (!isSupabaseConfigured()) return
+
+    const { data, error } = await supabase
+      .from('fridge_door')
+      .select('upper_photo_url, lower_photo_url, left_photo_url')
+      .eq('id', 1)
+      .maybeSingle()
+
+    if (error) {
+      console.warn('fridge_door fetch:', error.message)
+      return
+    }
+
+    if (data?.upper_photo_url) setUpperPhotoUrl(data.upper_photo_url)
+    if (data?.lower_photo_url) setLowerPhotoUrl(data.lower_photo_url)
+    if (data?.left_photo_url) setLeftPhotoUrl(data.left_photo_url)
   }, [supabase])
 
   useEffect(() => {
     fetchDoorPhotos()
+
+    if (!isSupabaseConfigured()) return
 
     const channel = supabase
       .channel('fridge-door-realtime')
@@ -72,36 +87,34 @@ export default function FridgeView({ items, onEdit, onDelete }: Props) {
   }, [fetchDoorPhotos, supabase])
 
   async function handleUploadPolaroid(slot: PolaroidSlot, file: File) {
-    const preview = URL.createObjectURL(file)
-    if (slot === 'upper') setUpperPhotoUrl(preview)
-    else setLowerPhotoUrl(preview)
+    const dataUrl = await fileToResizedDataUrl(file)
+    setLocalDoorPhoto(slot, dataUrl)
+    setPhotoForSlot(slot, dataUrl)
+
+    if (!isSupabaseConfigured()) return
 
     try {
-      const ext = file.name.split('.').pop() ?? 'jpg'
-      const path = `door-${slot}-${Date.now()}.${ext}`
-      const { error: uploadError } = await supabase.storage.from('item-photos').upload(path, file)
+      const blob = await dataUrlToBlob(dataUrl)
+      const path = `door-${slot}-${Date.now()}.jpg`
+      const { error: uploadError } = await supabase.storage
+        .from('item-photos')
+        .upload(path, blob, { contentType: 'image/jpeg', upsert: false })
       if (uploadError) throw uploadError
 
       const { data: urlData } = supabase.storage.from('item-photos').getPublicUrl(path)
       const publicUrl = urlData.publicUrl
-      const column = slot === 'upper' ? 'upper_photo_url' : 'lower_photo_url'
+      const column = getSlotColumn(slot)
 
       const { error: dbError } = await supabase
         .from('fridge_door')
         .upsert({ id: 1, [column]: publicUrl, updated_at: new Date().toISOString() }, { onConflict: 'id' })
 
-      setLocalDoorPhoto(slot, publicUrl)
-      if (slot === 'upper') setUpperPhotoUrl(publicUrl)
-      else setLowerPhotoUrl(publicUrl)
+      if (dbError) throw dbError
 
-      if (dbError) console.warn('fridge_door save:', dbError.message)
+      setLocalDoorPhoto(slot, publicUrl)
+      setPhotoForSlot(slot, publicUrl)
     } catch (err) {
-      const local = getLocalDoorPhotos()
-      if (slot === 'upper') setUpperPhotoUrl(local.upper)
-      else setLowerPhotoUrl(local.lower)
-      throw err
-    } finally {
-      URL.revokeObjectURL(preview)
+      console.warn('Polaroid cloud sync failed — kept local copy:', err)
     }
   }
 
@@ -236,6 +249,7 @@ export default function FridgeView({ items, onEdit, onDelete }: Props) {
             onOpenNotes={() => setKitchenNotesOpen(true)}
             upperPhotoUrl={upperPhotoUrl}
             lowerPhotoUrl={lowerPhotoUrl}
+            leftPhotoUrl={leftPhotoUrl}
             onUploadPolaroid={handleUploadPolaroid}
             className={FRIDGE_HEIGHT_CLASS}
           />

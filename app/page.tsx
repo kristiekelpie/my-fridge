@@ -1,9 +1,7 @@
 'use client'
 
-export const dynamic = 'force-dynamic'
-
 import { useState, useEffect, useCallback } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { createClient, isSupabaseConfigured } from '@/lib/supabase/client'
 import { HouseholdItem } from '@/lib/types'
 import FridgeView from '@/components/fridge/FridgeView'
 import ItemForm from '@/components/items/ItemForm'
@@ -43,7 +41,13 @@ export default function HomePage() {
   }, [fetchItems, supabase])
 
   async function handleDelete(id: string) {
-    await supabase.from('household_items').delete().eq('id', id)
+    const previous = items
+    setItems(prev => prev.filter(i => i.id !== id))
+    const { error } = await supabase.from('household_items').delete().eq('id', id)
+    if (error) {
+      console.error('Delete failed:', error.message)
+      setItems(previous)
+    }
   }
 
   function handleEdit(item: HouseholdItem) {
@@ -76,6 +80,11 @@ export default function HomePage() {
 
       {/* Main content */}
       <main className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        {!isSupabaseConfigured() && (
+          <div className="shrink-0 mx-5 mt-3 px-3 py-2 bg-amber-50 border border-amber-300 rounded-lg font-mono text-[10px] text-amber-900 leading-snug">
+            Supabase is not configured. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in Vercel → Settings → Environment Variables, then redeploy.
+          </div>
+        )}
         {loading ? (
           <div className="flex-1 flex items-center justify-center">
             <div className="font-mono text-xs tracking-[0.3em] uppercase text-stone-500 animate-pulse">

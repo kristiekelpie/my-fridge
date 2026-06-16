@@ -84,7 +84,10 @@ export default function Sidebar({ open, onClose }: Props) {
   }
 
   async function deleteNote(id: string) {
-    await supabase.from('meal_notes').delete().eq('id', id)
+    const previous = notes
+    setNotes(n => n.filter(x => x.id !== id))
+    const { error } = await supabase.from('meal_notes').delete().eq('id', id)
+    if (error) setNotes(previous)
   }
 
   async function addShoppingItem() {
@@ -104,7 +107,10 @@ export default function Sidebar({ open, onClose }: Props) {
   }
 
   async function deleteShoppingItem(id: string) {
-    await supabase.from('shopping_items').delete().eq('id', id)
+    const previous = shopping
+    setShopping(s => s.filter(x => x.id !== id))
+    const { error } = await supabase.from('shopping_items').delete().eq('id', id)
+    if (error) setShopping(previous)
   }
 
   const groupedShopping = STORES.reduce((acc, store) => {
@@ -187,6 +193,7 @@ export default function Sidebar({ open, onClose }: Props) {
               {notes.map(note => (
                 <div key={note.id} className="bg-orange-50 rounded-2xl p-3 relative">
                   <button
+                    type="button"
                     onClick={() => deleteNote(note.id)}
                     className="absolute top-2 right-2 p-1 text-slate-400 active:text-red-500"
                   >
@@ -261,6 +268,7 @@ export default function Sidebar({ open, onClose }: Props) {
                             {item.name}
                           </span>
                           <button
+                            type="button"
                             onClick={() => deleteShoppingItem(item.id)}
                             className="p-1 text-slate-300 active:text-red-400"
                           >

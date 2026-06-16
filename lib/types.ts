@@ -19,6 +19,7 @@ export interface FridgeDoor {
   id: number
   upper_photo_url: string | null
   lower_photo_url: string | null
+  left_photo_url: string | null
   updated_at: string
 }
 

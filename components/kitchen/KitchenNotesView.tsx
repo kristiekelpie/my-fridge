@@ -96,9 +96,13 @@ export default function KitchenNotesView({ onBack }: Props) {
   }
 
   async function deleteNote(id: string) {
+    const previous = notes
+    setNotes(n => n.filter(x => x.id !== id))
     const { error: deleteError } = await supabase.from('meal_notes').delete().eq('id', id)
-    if (deleteError) setError(deleteError.message)
-    else await fetchNotes()
+    if (deleteError) {
+      setNotes(previous)
+      setError(deleteError.message)
+    }
   }
 
   async function addShoppingItem() {
@@ -130,9 +134,13 @@ export default function KitchenNotesView({ onBack }: Props) {
   }
 
   async function deleteShoppingItem(id: string) {
+    const previous = shopping
+    setShopping(s => s.filter(x => x.id !== id))
     const { error: deleteError } = await supabase.from('shopping_items').delete().eq('id', id)
-    if (deleteError) setError(deleteError.message)
-    else await fetchShopping()
+    if (deleteError) {
+      setShopping(previous)
+      setError(deleteError.message)
+    }
   }
 
   const groupedShopping = STORES.reduce((acc, store) => {

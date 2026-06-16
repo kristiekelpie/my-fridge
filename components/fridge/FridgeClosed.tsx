@@ -8,6 +8,7 @@ interface Props {
   onOpenNotes: () => void
   upperPhotoUrl: string | null
   lowerPhotoUrl: string | null
+  leftPhotoUrl: string | null
   onUploadPolaroid: (slot: PolaroidSlot, file: File) => Promise<void>
   className?: string
 }
@@ -17,6 +18,7 @@ export default function FridgeClosed({
   onOpenNotes,
   upperPhotoUrl,
   lowerPhotoUrl,
+  leftPhotoUrl,
   onUploadPolaroid,
   className = '',
 }: Props) {
@@ -77,6 +79,7 @@ export default function FridgeClosed({
           slot="upper"
           photoUrl={upperPhotoUrl}
           onUpload={onUploadPolaroid}
+          magnetCorner="top-quarter"
           style={{ top: '22%', left: '50%', transform: 'translateX(-50%) rotate(-3deg)' }}
         />
       </div>
@@ -103,6 +106,15 @@ export default function FridgeClosed({
           aria-label="Open fridge door"
         />
 
+        {/* Upper-left polaroid on fridge door */}
+        <DoorPolaroid
+          slot="left"
+          photoUrl={leftPhotoUrl}
+          onUpload={onUploadPolaroid}
+          magnetCorner="top-left"
+          style={{ top: '14%', left: '14%', transform: 'rotate(-5deg)' }}
+        />
+
         {/* Lined notes paper */}
         <DoorNotesPaper
           onClick={onOpenNotes}
@@ -114,6 +126,7 @@ export default function FridgeClosed({
           slot="lower"
           photoUrl={lowerPhotoUrl}
           onUpload={onUploadPolaroid}
+          magnetCorner="top-right"
           style={{ top: '52%', left: '50%', transform: 'translateX(-50%) rotate(4deg)' }}
         />
       </div>
