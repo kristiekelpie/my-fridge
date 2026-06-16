@@ -1,10 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, JetBrains_Mono, Caveat } from "next/font/google";
+import { Inter, JetBrains_Mono, Caveat, Fredoka } from "next/font/google";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
 const caveat = Caveat({ subsets: ["latin"], variable: "--font-hand" });
+const fredoka = Fredoka({ subsets: ["latin"], variable: "--font-magnet" });
 
 export const metadata: Metadata = {
   title: "Our Fridge",
@@ -26,7 +27,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${mono.variable} ${caveat.variable} antialiased`}>
+      <body className={`${inter.variable} ${mono.variable} ${caveat.variable} ${fredoka.variable} antialiased`}>
         {children}
       </body>
     </html>

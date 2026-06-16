@@ -2,16 +2,19 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { MealNote, ShoppingItem, Store } from '@/lib/types'
+import { MealNote, ShoppingItem, Store, ShoppingCategory, SHOPPING_CATEGORY_LABELS } from '@/lib/types'
+import { toggleShoppingItemChecked } from '@/lib/shoppingActions'
 import { X, Plus, Trash2, ChevronRight } from 'lucide-react'
 
-const STORES: Store[] = ['Costco', 'Walmart', 'Albertsons', 'Any']
+const STORES: Store[] = ['Costco', 'Walmart', 'Albertsons', 'Any', 'Other']
 const STORE_EMOJI: Record<Store, string> = {
   Costco: '🏬',
   Walmart: '🛒',
   Albertsons: '🛍️',
   Any: '📋',
+  Other: '📍',
 }
+const CATEGORIES: ShoppingCategory[] = ['food', 'household', 'personal']
 
 interface Props {
   open: boolean
@@ -29,6 +32,7 @@ export default function Sidebar({ open, onClose }: Props) {
   const [newNoteContent, setNewNoteContent] = useState('')
   const [newShoppingName, setNewShoppingName] = useState('')
   const [newShoppingStore, setNewShoppingStore] = useState<Store>('Any')
+  const [newShoppingCategory, setNewShoppingCategory] = useState<ShoppingCategory>('food')
   const [savingNote, setSavingNote] = useState(false)
   const [addingItem, setAddingItem] = useState(false)
 
@@ -45,7 +49,7 @@ export default function Sidebar({ open, onClose }: Props) {
       .from('shopping_items')
       .select('*')
       .order('created_at', { ascending: false })
-    if (data) setShopping(data)
+    if (data) setShopping(data.map(row => ({ ...row, category: row.category ?? 'food' })))
   }, [supabase])
 
   useEffect(() => {
@@ -96,6 +100,7 @@ export default function Sidebar({ open, onClose }: Props) {
     await supabase.from('shopping_items').insert({
       name: newShoppingName.trim(),
       store: newShoppingStore,
+      category: newShoppingCategory,
       checked: false,
     })
     setNewShoppingName('')
@@ -103,7 +108,8 @@ export default function Sidebar({ open, onClose }: Props) {
   }
 
   async function toggleShoppingItem(item: ShoppingItem) {
-    await supabase.from('shopping_items').update({ checked: !item.checked }).eq('id', item.id)
+    await toggleShoppingItemChecked(supabase, item)
+    await fetchShopping()
   }
 
   async function deleteShoppingItem(id: string) {
@@ -143,7 +149,7 @@ export default function Sidebar({ open, onClose }: Props) {
             </button>
           )}
           <div className="flex-1 pl-1">
-            <p className="font-mono text-[9px] tracking-[0.25em] uppercase text-stone-500">The Kitchen Log</p>
+            <p className="font-mono text-[9px] tracking-[0.25em] uppercase text-stone-500">Our Log</p>
             <h2 className="font-mono text-base font-bold tracking-tight text-stone-900 mt-0.5">
               <span className="editorial-underline">
                 {panel === 'main' ? 'Menu' : panel === 'notes' ? 'Meal Notes' : 'Shopping List'}
@@ -207,7 +213,8 @@ export default function Sidebar({ open, onClose }: Props) {
                 </div>
               ))}
             </div>
-            <div className="p-4 border-t border-slate-200 space-y-2">
+            <div className="p-4 border-t border-slate-200 shrink-0 flex justify-center">
+              <div className="w-full max-w-xs space-y-2">
               <input
                 type="text"
                 value={newNoteTitle}
@@ -229,6 +236,7 @@ export default function Sidebar({ open, onClose }: Props) {
               >
                 Add Note
               </button>
+              </div>
             </div>
           </div>
         )}
@@ -267,6 +275,9 @@ export default function Sidebar({ open, onClose }: Props) {
                           <span className={`flex-1 text-sm ${item.checked ? 'line-through text-slate-400' : 'text-slate-700'}`}>
                             {item.name}
                           </span>
+                          <span className="font-mono text-[9px] uppercase text-slate-400 shrink-0">
+                            {SHOPPING_CATEGORY_LABELS[item.category ?? 'food']}
+                          </span>
                           <button
                             type="button"
                             onClick={() => deleteShoppingItem(item.id)}
@@ -281,7 +292,8 @@ export default function Sidebar({ open, onClose }: Props) {
                 )
               })}
             </div>
-            <div className="p-4 border-t border-slate-200 space-y-2">
+            <div className="p-4 border-t border-slate-200 shrink-0 flex justify-center">
+              <div className="w-full max-w-xs space-y-2">
               <div className="flex gap-2">
                 <input
                   type="text"
@@ -306,6 +318,16 @@ export default function Sidebar({ open, onClose }: Props) {
               >
                 {STORES.map(s => <option key={s} value={s}>{STORE_EMOJI[s]} {s}</option>)}
               </select>
+              <select
+                value={newShoppingCategory}
+                onChange={e => setNewShoppingCategory(e.target.value as ShoppingCategory)}
+                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none"
+              >
+                {CATEGORIES.map(c => (
+                  <option key={c} value={c}>{SHOPPING_CATEGORY_LABELS[c]}</option>
+                ))}
+              </select>
+              </div>
             </div>
           </div>
         )}

@@ -5,8 +5,8 @@ import { Location } from '@/lib/types'
 interface BodyZone {
   id: Location
   label: string
-  y: number
-  height: number
+  row: number
+  col: 'full'
 }
 
 const CAB_X = 14
@@ -17,13 +17,75 @@ const DOOR_W = 185
 const TOP = 14
 const HEIGHT = 492
 
+const FREEZER_Y = TOP + 4
+const FREEZER_H = 168
+const FRIDGE_Y = FREEZER_Y + FREEZER_H + 4
+const KICKPLATE_Y = TOP + HEIGHT - 28
+const FRIDGE_H = KICKPLATE_Y - FRIDGE_Y
+
+const ZONE_GAP = 6
+const ROW_COUNT = 4
+const ROW_H = Math.floor((FRIDGE_H - ZONE_GAP * (ROW_COUNT - 1)) / ROW_COUNT)
+const SPLIT_GAP = 6
+const NOTCH_W_RATIO = 0.44
+const NOTCH_H_RATIO = 0.48
+const ZONE_RX = 6
+
 const BODY_ZONES: BodyZone[] = [
-  { id: 'shelf1', label: '1st Shelf', y: 232, height: 46 },
-  { id: 'shelf2', label: '2nd Shelf', y: 280, height: 46 },
-  { id: 'upper_drawer', label: 'Upper Drawer', y: 328, height: 40 },
-  { id: 'shelf3', label: '3rd Shelf', y: 370, height: 46 },
-  { id: 'lower_drawer', label: 'Lower Drawer', y: 418, height: 44 },
+  { id: 'shelf1', label: '1st shelf', row: 0, col: 'full' },
+  { id: 'shelf3', label: '3rd shelf', row: 2, col: 'full' },
+  { id: 'lower_drawer', label: 'lower drawer', row: 3, col: 'full' },
 ]
+
+function rowY(row: number) {
+  return FRIDGE_Y + row * (ROW_H + ZONE_GAP)
+}
+
+function lShapePath(
+  boxX: number,
+  boxY: number,
+  boxW: number,
+  boxH: number,
+  notchW: number,
+  notchH: number,
+  r: number = ZONE_RX,
+) {
+  const nx = boxX + notchW + SPLIT_GAP
+  const ny = boxY + notchH + SPLIT_GAP
+  const x0 = boxX
+  const y0 = boxY
+  const x1 = boxX + boxW
+  const y1 = boxY + boxH
+  const rt = Math.min(r, (x1 - nx) / 2, (y1 - ny) / 2, notchW / 3, notchH / 3, (nx - x0) / 2)
+
+  // Sharp inner corner preserves the visible gap beside/below the notch (drawer / storage)
+  return [
+    `M ${nx + rt} ${y0}`,
+    `H ${x1 - rt}`,
+    `Q ${x1} ${y0} ${x1} ${y0 + rt}`,
+    `V ${y1 - rt}`,
+    `Q ${x1} ${y1} ${x1 - rt} ${y1}`,
+    `H ${x0 + rt}`,
+    `Q ${x0} ${y1} ${x0} ${y1 - rt}`,
+    `V ${ny}`,
+    `H ${nx}`,
+    `V ${y0 + rt}`,
+    `Q ${nx} ${y0} ${nx + rt} ${y0}`,
+    'Z',
+  ].join(' ')
+}
+
+function lShapeLabelCenter(boxX: number, boxY: number, boxW: number, boxH: number, notchH: number) {
+  return {
+    x: boxX + boxW / 2,
+    y: boxY + notchH + SPLIT_GAP + (boxH - notchH - SPLIT_GAP) / 2,
+  }
+}
+
+const DOOR_INNER_X = DOOR_X + 8
+const DOOR_INNER_W = DOOR_W - 16
+const DOOR_FRIDGE_Y = FRIDGE_Y
+const DOOR_FRIDGE_H = FRIDGE_H
 
 interface Props {
   itemCounts: Partial<Record<Location, number>>
@@ -44,6 +106,160 @@ function CountBadge({ cx, cy, count, active }: { cx: number; cy: number; count: 
   )
 }
 
+function ZoneLabel({ x, y, w, h, label, active }: { x: number; y: number; w: number; h: number; label: string; active: boolean }) {
+  return (
+    <text
+      x={x + w / 2}
+      y={y + h / 2 + 1}
+      fontSize="9"
+      fill={active ? '#1A1A1A' : '#3A3A3A'}
+      fontFamily="var(--font-mono), monospace"
+      textAnchor="middle"
+      dominantBaseline="middle"
+      letterSpacing="0.3"
+    >
+      {label}
+    </text>
+  )
+}
+
+function ClickZone({
+  x, y, w, h, label, count, active, onClick, fillIdle = '#FFFFFF', strokeIdle = '#D4D4D4',
+}: {
+  x: number; y: number; w: number; h: number
+  label: string; count: number; active: boolean
+  onClick: () => void
+  fillIdle?: string
+  strokeIdle?: string
+}) {
+  return (
+    <g onClick={onClick} style={{ cursor: 'pointer' }}>
+      <rect
+        x={x}
+        y={y}
+        width={w}
+        height={h}
+        rx={ZONE_RX}
+        fill={active ? '#F5F0E4' : fillIdle}
+        stroke={active ? '#1A1A1A' : strokeIdle}
+        strokeWidth={active ? 1.8 : 1}
+      />
+      <ZoneLabel x={x} y={y} w={w} h={h} label={label} active={active} />
+      <CountBadge cx={x + w - 14} cy={y + 14} count={count} active={active} />
+    </g>
+  )
+}
+
+function ClickZoneL({
+  boxX, boxY, boxW, boxH, notchW, notchH,
+  label, labelX, labelY, count, active, onClick, badgeX, badgeY,
+  fillIdle = '#FFFFFF',
+}: {
+  boxX: number; boxY: number; boxW: number; boxH: number
+  notchW: number; notchH: number
+  label: string
+  labelX: number
+  labelY: number
+  count: number
+  active: boolean
+  onClick: () => void
+  badgeX: number
+  badgeY: number
+  fillIdle?: string
+}) {
+  const path = lShapePath(boxX, boxY, boxW, boxH, notchW, notchH)
+
+  return (
+    <g onClick={onClick} style={{ cursor: 'pointer' }}>
+      <path
+        d={path}
+        fill={active ? '#F5F0E4' : fillIdle}
+        stroke={active ? '#1A1A1A' : '#D4D4D4'}
+        strokeWidth={active ? 1.8 : 1}
+        strokeLinejoin="round"
+      />
+      <text
+        x={labelX}
+        y={labelY + 1}
+        fontSize="9"
+        fill={active ? '#1A1A1A' : '#3A3A3A'}
+        fontFamily="var(--font-mono), monospace"
+        textAnchor="middle"
+        dominantBaseline="middle"
+        letterSpacing="0.3"
+      >
+        {label}
+      </text>
+      <CountBadge cx={badgeX} cy={badgeY} count={count} active={active} />
+    </g>
+  )
+}
+
+function notchSize(boxW: number, boxH: number) {
+  return {
+    w: boxW * NOTCH_W_RATIO,
+    h: boxH * NOTCH_H_RATIO,
+  }
+}
+
+function NotchedZoneRow({
+  zoneX, zoneW, y, h,
+  notchLabel, lLabel,
+  notchCount, lCount,
+  notchActive, lActive,
+  onNotch, onL,
+  notchRefH,
+  showNotchCount = true,
+  notchFill = '#FFFFFF',
+  lFill = '#FFFFFF',
+}: {
+  zoneX: number; zoneW: number; y: number; h: number
+  notchLabel: string; lLabel: string
+  notchCount: number; lCount: number
+  notchActive: boolean; lActive: boolean
+  onNotch: () => void; onL: () => void
+  notchRefH?: number
+  showNotchCount?: boolean
+  notchFill?: string
+  lFill?: string
+}) {
+  const { w: notchW, h: notchH } = notchSize(zoneW, notchRefH ?? h)
+  const lLabelPos = lShapeLabelCenter(zoneX, y, zoneW, h, notchH)
+
+  return (
+    <>
+      <ClickZoneL
+        boxX={zoneX}
+        boxY={y}
+        boxW={zoneW}
+        boxH={h}
+        notchW={notchW}
+        notchH={notchH}
+        label={lLabel}
+        labelX={lLabelPos.x}
+        labelY={lLabelPos.y}
+        count={lCount}
+        active={lActive}
+        onClick={onL}
+        badgeX={zoneX + zoneW - 14}
+        badgeY={y + 14}
+        fillIdle={lFill}
+      />
+      <ClickZone
+        x={zoneX}
+        y={y}
+        w={notchW}
+        h={notchH}
+        label={notchLabel}
+        count={showNotchCount ? notchCount : 0}
+        active={notchActive}
+        onClick={onNotch}
+        fillIdle={notchFill}
+      />
+    </>
+  )
+}
+
 export default function FridgeInteriorOpen({ itemCounts, onZoneClick, activeZone, className = '' }: Props) {
   const freezerCount = itemCounts['freezer'] ?? 0
   const doorCount = itemCounts['door'] ?? 0
@@ -52,8 +268,6 @@ export default function FridgeInteriorOpen({ itemCounts, onZoneClick, activeZone
 
   const cabInnerX = CAB_X + 4
   const cabInnerW = CAB_W - 8
-  const doorInnerX = DOOR_X + 8
-  const doorInnerW = DOOR_W - 16
 
   return (
     <div
@@ -66,149 +280,126 @@ export default function FridgeInteriorOpen({ itemCounts, onZoneClick, activeZone
         preserveAspectRatio="xMidYMid meet"
         xmlns="http://www.w3.org/2000/svg"
       >
-        {/* Background */}
-        <rect x="0" y="0" width="420" height="520" fill="transparent" />
+        <defs>
+          <linearGradient id="interiorWhite" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#FFFFFF" />
+            <stop offset="100%" stopColor="#F6F6F4" />
+          </linearGradient>
+          <linearGradient id="freezerInterior" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#FAFCFE" />
+            <stop offset="100%" stopColor="#EEF4F8" />
+          </linearGradient>
+        </defs>
 
-        {/* ── Main cabinet block ── */}
+        {/* ── Cabinet interior ── */}
         <g>
-          <rect x={CAB_X} y={TOP} width={CAB_W} height={HEIGHT} rx="12" fill="#FFFFFF" stroke="#A8A8A8" strokeWidth="1.5" />
-          <rect x={CAB_X + 2} y={TOP + 2} width={CAB_W - 4} height={HEIGHT - 4} rx="11" fill="#FAFAFA" stroke="#E0E0E0" strokeWidth="0.5" />
+          <rect x={CAB_X} y={TOP} width={CAB_W} height={HEIGHT} rx="12" fill="#FFFFFF" stroke="#B8B8B6" strokeWidth="1.2" />
+          <rect x={CAB_X + 2} y={TOP + 2} width={CAB_W - 4} height={HEIGHT - 4} rx="11" fill="url(#interiorWhite)" />
 
-          {/* Freezer interior */}
-          <g onClick={() => onZoneClick('freezer')} style={{ cursor: 'pointer' }}>
-            <rect
-              x={cabInnerX}
-              y={TOP + 4}
-              width={cabInnerW}
-              height={168}
-              rx="8"
-              fill={isFreezerActive ? '#E8F4FC' : '#F5FAFF'}
-              stroke={isFreezerActive ? '#1A1A1A' : '#B8D4E8'}
-              strokeWidth={isFreezerActive ? 2 : 1}
-            />
-            {[58, 112, 148].map((y) => (
-              <line key={y} x1={cabInnerX + 4} y1={y} x2={cabInnerX + cabInnerW - 4} y2={y} stroke="#C8DFF0" strokeWidth="1" />
-            ))}
-            <text x={CAB_X + CAB_W / 2} y={TOP + 86} fontSize="9" fill="#6B8FA3" fontFamily="var(--font-mono), monospace" textAnchor="middle" letterSpacing="2">
-              FREEZER
-            </text>
-            <CountBadge cx={CAB_X + CAB_W - 16} cy={TOP + 18} count={freezerCount} active={isFreezerActive} />
-          </g>
+          <ClickZone
+            x={cabInnerX}
+            y={FREEZER_Y}
+            w={cabInnerW}
+            h={FREEZER_H}
+            label="freezer"
+            count={freezerCount}
+            active={isFreezerActive}
+            onClick={() => onZoneClick('freezer')}
+            fillIdle="url(#freezerInterior)"
+            strokeIdle="#D0DEE8"
+          />
 
-          <line x1={cabInnerX} y1={TOP + 178} x2={cabInnerX + cabInnerW} y2={TOP + 178} stroke="#D4D4D4" strokeWidth="1.5" />
-
-          <rect x={cabInnerX} y={TOP + 182} width={cabInnerW} height={286} rx="6" fill="#FAFAFA" stroke="#E8E8E8" strokeWidth="0.5" />
+          <rect x={cabInnerX} y={FRIDGE_Y} width={cabInnerW} height={FRIDGE_H} rx="6" fill="url(#interiorWhite)" stroke="#E8E8E6" strokeWidth="0.5" />
 
           {BODY_ZONES.map((zone) => {
             const count = itemCounts[zone.id] ?? 0
             const isActive = activeZone === zone.id
-            const isDrawer = zone.id === 'upper_drawer' || zone.id === 'lower_drawer'
+
             return (
-              <g key={zone.id} onClick={() => onZoneClick(zone.id)} style={{ cursor: 'pointer' }}>
-                <rect
-                  x={cabInnerX + 4}
-                  y={zone.y}
-                  width={cabInnerW - 8}
-                  height={zone.height - 4}
-                  rx={isDrawer ? 4 : 2}
-                  fill={isActive ? '#F0EBDC' : isDrawer ? '#F8F8F6' : '#FFFFFF'}
-                  stroke={isActive ? '#1A1A1A' : '#D4D4D4'}
-                  strokeWidth={isActive ? 1.8 : 0.8}
-                />
-                {!isDrawer && (
-                  <line x1={cabInnerX + 6} y1={zone.y + 2} x2={cabInnerX + cabInnerW - 6} y2={zone.y + 2} stroke="#FFFFFF" strokeWidth="1" opacity="0.8" />
-                )}
-                {isDrawer && (
-                  <rect x={CAB_X + CAB_W / 2 - 15} y={zone.y + (zone.height - 4) / 2 - 1.5} width="30" height="3" rx="1.5" fill="#C8C8C8" />
-                )}
-                <text
-                  x={cabInnerX + 12}
-                  y={zone.y + (zone.height - 4) / 2 + 1}
-                  fontSize="8"
-                  fill="#5A5A5A"
-                  fontFamily="var(--font-mono), monospace"
-                  dominantBaseline="middle"
-                  letterSpacing="0.5"
-                >
-                  {zone.label.toUpperCase()}
-                </text>
-                <CountBadge cx={cabInnerX + cabInnerW - 12} cy={zone.y + (zone.height - 4) / 2} count={count} active={isActive} />
-              </g>
+              <ClickZone
+                key={zone.id}
+                x={cabInnerX}
+                y={rowY(zone.row)}
+                w={cabInnerW}
+                h={ROW_H}
+                label={zone.label}
+                count={count}
+                active={isActive}
+                onClick={() => onZoneClick(zone.id)}
+              />
             )
           })}
 
-          {/* Cabinet kickplate */}
-          <rect x={CAB_X + 4} y={TOP + HEIGHT - 28} width={CAB_W - 8} height={22} rx="3" fill="#E8E8E8" />
-          <line x1={CAB_X + 16} y1={TOP + HEIGHT - 20} x2={CAB_X + CAB_W - 16} y2={TOP + HEIGHT - 20} stroke="#D0D0D0" strokeWidth="0.5" />
+          <NotchedZoneRow
+            zoneX={cabInnerX}
+            zoneW={cabInnerW}
+            y={rowY(1)}
+            h={ROW_H}
+            notchLabel="drawer"
+            lLabel="2nd shelf"
+            notchCount={itemCounts['upper_drawer'] ?? 0}
+            lCount={itemCounts['shelf2'] ?? 0}
+            notchActive={activeZone === 'upper_drawer'}
+            lActive={activeZone === 'shelf2'}
+            onNotch={() => onZoneClick('upper_drawer')}
+            onL={() => onZoneClick('shelf2')}
+          />
+
+          <rect x={CAB_X + 4} y={KICKPLATE_Y} width={CAB_W - 8} height={22} rx="3" fill="#F0F0EE" />
+          <line x1={CAB_X + 16} y1={KICKPLATE_Y + 8} x2={CAB_X + CAB_W - 16} y2={KICKPLATE_Y + 8} stroke="#E0E0DE" strokeWidth="0.5" />
         </g>
 
-        {/* ── Door block (swung open, same size as cabinet) ── */}
-        <g onClick={() => onZoneClick('door')} style={{ cursor: 'pointer' }}>
+        {/* ── Door ── */}
+        <g>
           <rect
             x={DOOR_X}
             y={TOP}
             width={DOOR_W}
             height={HEIGHT}
             rx="12"
-            fill={isDoorActive ? '#F5F2EA' : '#FCFCFC'}
-            stroke={isDoorActive ? '#1A1A1A' : '#A8A8A8'}
-            strokeWidth={isDoorActive ? 2 : 1.5}
+            fill="#FAFAF8"
+            stroke="#B8B8B6"
+            strokeWidth="1.2"
           />
-          {/* Outer face shine */}
-          <rect x={DOOR_X + DOOR_W - 14} y={TOP + 8} width="6" height={HEIGHT - 16} rx="3" fill="#FFFFFF" opacity="0.5" />
-
-          {/* Hinge edge (left side of door block) */}
           <line x1={DOOR_X + 2} y1={TOP + 20} x2={DOOR_X + 2} y2={TOP + HEIGHT - 20} stroke="#888" strokeWidth="3" strokeLinecap="round" />
 
-          {/* Upper panel — door continues above fridge opening */}
-          <rect x={DOOR_X + 8} y={TOP + 8} width={DOOR_W - 16} height={168} rx="6" fill={isDoorActive ? '#FAFAF8' : '#FFFFFF'} stroke="#E8E8E8" strokeWidth="0.8" />
-
-          {/* Door interior — fridge section */}
+          {/* Freezer door — cool interior, separate from fridge door */}
           <rect
-            x={DOOR_X + 8}
-            y={TOP + 182}
-            width={DOOR_W - 16}
-            height={286}
-            rx="6"
-            fill={isDoorActive ? '#FAF8F2' : '#FFFFFF'}
-            stroke="#D4D4D4"
-            strokeWidth="0.8"
+            x={DOOR_INNER_X}
+            y={FREEZER_Y}
+            width={DOOR_INNER_W}
+            height={FREEZER_H}
+            rx={ZONE_RX}
+            fill="url(#freezerInterior)"
+            stroke="#D0DEE8"
+            strokeWidth="1"
+          />
+          <ZoneLabel x={DOOR_INNER_X} y={FREEZER_Y} w={DOOR_INNER_W} h={FREEZER_H} label="freezer door" active={false} />
+
+          {/* Storage + fridge door — separate click zones, no shared outer box */}
+          <NotchedZoneRow
+            zoneX={DOOR_INNER_X}
+            zoneW={DOOR_INNER_W}
+            y={DOOR_FRIDGE_Y}
+            h={DOOR_FRIDGE_H}
+            notchRefH={ROW_H}
+            notchLabel="storage"
+            lLabel="fridge door"
+            notchCount={doorCount}
+            lCount={doorCount}
+            notchActive={isDoorActive}
+            lActive={isDoorActive}
+            onNotch={() => onZoneClick('door')}
+            onL={() => onZoneClick('door')}
+            showNotchCount={false}
+            notchFill="url(#interiorWhite)"
+            lFill="url(#interiorWhite)"
           />
 
-          {/* Door bins */}
-          {[0, 1, 2, 3].map((i) => (
-            <rect
-              key={i}
-              x={doorInnerX}
-              y={TOP + 196 + i * 64}
-              width={doorInnerW}
-              height="54"
-              rx="4"
-              fill={isDoorActive ? '#F0EBDC' : '#FAFAFA'}
-              stroke="#D4D4D4"
-              strokeWidth="0.8"
-            />
-          ))}
-
-          <text
-            x={DOOR_X + DOOR_W / 2}
-            y={TOP + HEIGHT - 36}
-            fontSize="9"
-            fill="#5A5A5A"
-            fontFamily="var(--font-mono), monospace"
-            textAnchor="middle"
-            letterSpacing="2"
-          >
-            DOOR
-          </text>
-          <CountBadge cx={DOOR_X + DOOR_W - 16} cy={TOP + 196} count={doorCount} active={isDoorActive} />
-
-          {/* Door kickplate */}
-          <rect x={DOOR_X + 4} y={TOP + HEIGHT - 28} width={DOOR_W - 8} height={22} rx="3" fill="#E8E8E8" />
-          <line x1={DOOR_X + 16} y1={TOP + HEIGHT - 20} x2={DOOR_X + DOOR_W - 16} y2={TOP + HEIGHT - 20} stroke="#D0D0D0" strokeWidth="0.5" />
+          <rect x={DOOR_X + 4} y={KICKPLATE_Y} width={DOOR_W - 8} height={22} rx="3" fill="#F0F0EE" />
+          <line x1={DOOR_X + 16} y1={KICKPLATE_Y + 8} x2={DOOR_X + DOOR_W - 16} y2={KICKPLATE_Y + 8} stroke="#E0E0DE" strokeWidth="0.5" />
         </g>
 
-        {/* Floor shadow between blocks */}
         <ellipse cx={(CAB_X + CAB_W + DOOR_X) / 2} cy={TOP + HEIGHT + 4} rx="90" ry="4" fill="#000" opacity="0.06" />
       </svg>
     </div>

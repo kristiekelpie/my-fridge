@@ -1,6 +1,7 @@
 export type Category = 'meat' | 'vegetables' | 'dairy' | 'jarred_sauces' | 'drinks' | 'other'
 export type Location = 'freezer' | 'shelf1' | 'shelf2' | 'upper_drawer' | 'shelf3' | 'lower_drawer' | 'door'
-export type Store = 'Costco' | 'Walmart' | 'Albertsons' | 'Any'
+export type Store = 'Costco' | 'Walmart' | 'Albertsons' | 'Any' | 'Other'
+export type ShoppingCategory = 'food' | 'household' | 'personal'
 export type ExpiryStatus = 'fresh' | 'soon' | 'urgent' | 'expired'
 
 export interface HouseholdItem {
@@ -37,7 +38,14 @@ export interface ShoppingItem {
   updated_at: string
   name: string
   store: Store | null
+  category: ShoppingCategory
   checked: boolean
+}
+
+export const SHOPPING_CATEGORY_LABELS: Record<ShoppingCategory, string> = {
+  food: 'Food',
+  household: 'Household',
+  personal: 'Personal',
 }
 
 export const CATEGORY_LABELS: Record<Category, string> = {
@@ -53,7 +61,7 @@ export const LOCATION_LABELS: Record<Location, string> = {
   freezer: 'Freezer',
   shelf1: '1st Shelf',
   shelf2: '2nd Shelf',
-  upper_drawer: 'Upper Drawer',
+  upper_drawer: 'Drawer',
   shelf3: '3rd Shelf',
   lower_drawer: 'Lower Drawer',
   door: 'Door',

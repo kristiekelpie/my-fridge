@@ -22,18 +22,34 @@ export default function HomePage() {
       setLoading(false)
       return
     }
-    const { data, error } = await supabase
-      .from('household_items')
-      .select('*')
-      .order('expiry_date', { ascending: true })
-    if (error) {
-      console.error('Failed to load items:', error.message)
-      setFetchError(error.message)
-    } else {
-      setItems(data ?? [])
-      setFetchError(null)
+
+    const timeoutMs = 8000
+    try {
+      const result = await Promise.race([
+        supabase
+          .from('household_items')
+          .select('*')
+          .order('expiry_date', { ascending: true }),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Request timed out')), timeoutMs)
+        ),
+      ])
+
+      const { data, error } = result
+      if (error) {
+        console.error('Failed to load items:', error.message)
+        setFetchError(error.message)
+      } else {
+        setItems(data ?? [])
+        setFetchError(null)
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Could not reach Supabase'
+      console.error('Failed to load items:', message)
+      setFetchError(message)
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }, [supabase])
 
   useEffect(() => {

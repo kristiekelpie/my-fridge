@@ -19,7 +19,61 @@ interface Props {
 
 const ALL_ZONES: Location[] = ['freezer', 'shelf1', 'shelf2', 'upper_drawer', 'shelf3', 'lower_drawer', 'door']
 
-const FRIDGE_HEIGHT_CLASS = 'h-[min(calc(100dvh-2.5rem),calc(100dvh-env(safe-area-inset-bottom)-2.5rem),680px)]'
+const FRIDGE_HEIGHT_CLASS =
+  'h-[min(calc(100dvh-6rem),calc(100dvh-env(safe-area-inset-bottom)-6rem),600px)] sm:h-[min(calc(100dvh-2.5rem),calc(100dvh-env(safe-area-inset-bottom)-2.5rem),680px)]'
+
+function InstockStamp({ totalItems, compact = false }: { totalItems: number; compact?: boolean }) {
+  return (
+    <div className={`border-2 border-stone-900 rounded-sm bg-stone-50/60 ${compact ? 'px-1.5 py-0.5' : 'px-2 py-0.5'}`}>
+      <p className={`font-mono font-bold tracking-tight text-stone-900 leading-none whitespace-nowrap ${compact ? 'text-[11px]' : 'text-lg'}`}>
+        instock <span aria-hidden>😊</span>
+      </p>
+      <p className={`font-mono text-stone-600 tracking-wider text-center whitespace-nowrap ${compact ? 'text-[7px]' : 'text-[8px]'}`}>
+        {totalItems} ITEMS
+      </p>
+    </div>
+  )
+}
+
+/** Mobile: stacked label on left of fridge */
+function TapToOpenMobile() {
+  return (
+    <div className="absolute z-10 pointer-events-none sm:hidden" style={{ top: '33%', left: '0' }}>
+      <p className="font-mono text-[9px] font-bold tracking-wide text-stone-900 leading-[1.15] -rotate-6">
+        tap
+        <br />
+        to
+        <br />
+        open
+      </p>
+      <svg width="44" height="36" viewBox="0 0 56 44" className="mt-0.5 ml-2">
+        <path d="M 4 8 Q 22 6 32 18 T 48 32" stroke="#1A1A1A" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+        <path d="M 43 27 L 50 32 L 43 37" stroke="#1A1A1A" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+      </svg>
+    </div>
+  )
+}
+
+/** Desktop: horizontal label off left edge of fridge */
+function TapToOpenDesktop() {
+  return (
+    <div
+      className="hidden sm:block absolute z-10 pointer-events-none"
+      style={{ top: '30%', right: '100%', marginRight: '0.35rem' }}
+    >
+      <div className="flex flex-nowrap items-center gap-1">
+        <span className="font-mono text-stone-900 text-sm leading-none">✻</span>
+        <span className="font-mono text-[10px] font-bold tracking-wide text-stone-900 whitespace-nowrap">
+          TAP&nbsp;TO&nbsp;OPEN
+        </span>
+      </div>
+      <svg width="64" height="40" viewBox="0 0 80 50" className="mt-0.5 ml-2">
+        <path d="M 5 5 Q 30 5 40 20 T 75 35" stroke="#1A1A1A" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+        <path d="M 70 30 L 76 35 L 70 40" stroke="#1A1A1A" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+      </svg>
+    </div>
+  )
+}
 
 export default function FridgeView({ items, onEdit, onDelete }: Props) {
   const supabase = createClient()
@@ -139,7 +193,7 @@ export default function FridgeView({ items, onEdit, onDelete }: Props) {
 
   return (
     <div className="flex-1 flex flex-col min-h-0 paper overflow-hidden">
-      <div className="flex-1 flex flex-col items-center justify-center min-h-0 px-3 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2">
+      <div className="flex-1 flex flex-col items-center justify-center min-h-0 px-3 sm:px-6 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2 overflow-x-hidden sm:overflow-visible">
         <div className="shrink-0 mb-1 text-center px-8">
           <p className="font-mono text-[10px] tracking-[0.25em] uppercase text-stone-500">
             Nic + Kris
@@ -150,56 +204,26 @@ export default function FridgeView({ items, onEdit, onDelete }: Props) {
           </h1>
         </div>
 
-        {/* Mobile: tap hint + instock — visible in viewport */}
-        <div className="sm:hidden shrink-0 w-full max-w-[min(100%,240px)] mx-auto flex flex-nowrap items-center justify-between gap-1 mb-1 px-1">
-          <div className="flex flex-nowrap items-center gap-1 shrink-0">
-            <span className="font-mono text-stone-900 text-xs leading-none">✻</span>
-            <span className="font-mono text-[9px] font-bold tracking-wide text-stone-900 whitespace-nowrap">
-              TAP&nbsp;TO&nbsp;OPEN
-            </span>
+        {/* Wrapper hugs fridge width on desktop so side labels sit adjacent */}
+        <div className="relative shrink-0 mx-auto w-full max-w-[min(100%,280px)] sm:w-fit sm:max-w-none px-8 sm:px-0 overflow-visible">
+          {/* Mobile: instock on upper freezer */}
+          <div
+            className="absolute z-10 pointer-events-none sm:hidden -rotate-6"
+            style={{ top: '4%', right: '-4%' }}
+          >
+            <InstockStamp totalItems={totalItems} compact />
           </div>
-          <div className="border-2 border-stone-900 px-1.5 py-0.5 rounded-sm bg-stone-50/60 shrink-0">
-            <p className="font-mono text-[11px] font-bold tracking-tight text-stone-900 leading-none whitespace-nowrap">
-              instock<span aria-hidden>😊</span>
-            </p>
-            <p className="font-mono text-[7px] text-stone-600 tracking-wider text-center whitespace-nowrap">
-              {totalItems} ITEMS
-            </p>
-          </div>
-        </div>
 
-        <div className="relative shrink-0">
-          {/* Desktop: in-stock stamp */}
+          {/* Desktop: instock off right edge */}
           <div
             className="hidden sm:block absolute z-10 pointer-events-none"
             style={{ top: '2%', left: '100%', marginLeft: '-0.5rem', transform: 'rotate(-4deg)' }}
           >
-            <div className="border-2 border-stone-900 px-2 py-0.5 rounded-sm bg-stone-50/60">
-              <p className="font-mono text-lg font-bold tracking-tight text-stone-900 leading-none whitespace-nowrap">
-                instock<span aria-hidden>😊</span>
-              </p>
-              <p className="font-mono text-[8px] text-stone-600 tracking-wider text-center whitespace-nowrap">
-                {totalItems} ITEMS
-              </p>
-            </div>
+            <InstockStamp totalItems={totalItems} />
           </div>
 
-          {/* Desktop: tap to open */}
-          <div
-            className="hidden sm:block absolute z-10 pointer-events-none"
-            style={{ top: '30%', right: '100%', marginRight: '0.35rem' }}
-          >
-            <div className="flex flex-nowrap items-center gap-1">
-              <span className="font-mono text-stone-900 text-sm leading-none">✻</span>
-              <span className="font-mono text-[10px] font-bold tracking-wide text-stone-900 whitespace-nowrap">
-                TAP&nbsp;TO&nbsp;OPEN
-              </span>
-            </div>
-            <svg width="64" height="40" viewBox="0 0 80 50" className="mt-0.5 ml-2">
-              <path d="M 5 5 Q 30 5 40 20 T 75 35" stroke="#1A1A1A" strokeWidth="1.2" fill="none" strokeLinecap="round" />
-              <path d="M 70 30 L 76 35 L 70 40" stroke="#1A1A1A" strokeWidth="1.2" fill="none" strokeLinecap="round" />
-            </svg>
-          </div>
+          <TapToOpenMobile />
+          <TapToOpenDesktop />
 
           {(urgent > 0 || soon > 0) && (
             <div
@@ -222,7 +246,7 @@ export default function FridgeView({ items, onEdit, onDelete }: Props) {
           )}
 
           {(urgent > 0 || soon > 0) && (
-            <p className="sm:hidden font-mono text-[8px] text-stone-700 text-center mb-1 whitespace-nowrap">
+            <p className="sm:hidden absolute z-10 pointer-events-none font-mono text-[8px] text-stone-700 whitespace-nowrap -bottom-4 left-1/2 -translate-x-1/2">
               {urgent > 0 && <><span className="text-red-700 font-bold">{urgent}</span> expiring</>}
               {urgent > 0 && soon > 0 && <span> · </span>}
               {soon > 0 && <><span className="text-amber-700 font-bold">{soon}</span> soon</>}
@@ -240,7 +264,7 @@ export default function FridgeView({ items, onEdit, onDelete }: Props) {
           />
         </div>
 
-        <p className="shrink-0 mt-2 text-center font-mono text-[10px] tracking-[0.25em] uppercase text-stone-500">
+        <p className="shrink-0 mt-3 sm:mt-2 text-center font-mono text-[10px] tracking-[0.25em] uppercase text-stone-500 px-4">
           tap +<span className="text-stone-400"> to add something fresh</span>
         </p>
       </div>

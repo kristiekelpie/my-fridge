@@ -31,7 +31,8 @@ create table if not exists shopping_items (
   created_at timestamptz default now() not null,
   updated_at timestamptz default now() not null,
   name text not null,
-  store text check (store in ('Costco', 'Walmart', 'Albertsons', 'Any')),
+  store text check (store in ('Costco', 'Walmart', 'Albertsons', 'Any', 'Other')),
+  category text not null default 'food' check (category in ('food', 'household', 'personal')),
   checked boolean default false not null
 );
 

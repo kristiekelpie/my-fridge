@@ -3,6 +3,15 @@
 
 alter table fridge_door add column if not exists left_photo_url text;
 
+-- Shopping list: category + Other store
+alter table shopping_items add column if not exists category text not null default 'food';
+alter table shopping_items drop constraint if exists shopping_items_category_check;
+alter table shopping_items add constraint shopping_items_category_check
+  check (category in ('food', 'household', 'personal'));
+alter table shopping_items drop constraint if exists shopping_items_store_check;
+alter table shopping_items add constraint shopping_items_store_check
+  check (store in ('Costco', 'Walmart', 'Albertsons', 'Any', 'Other'));
+
 insert into fridge_door (id) values (1) on conflict (id) do nothing;
 
 drop policy if exists "Public can do everything on items" on household_items;
