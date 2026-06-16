@@ -1,65 +1,117 @@
-import Image from "next/image";
+'use client'
 
-export default function Home() {
+export const dynamic = 'force-dynamic'
+
+import { useState, useEffect, useCallback } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { HouseholdItem } from '@/lib/types'
+import FridgeView from '@/components/fridge/FridgeView'
+import ItemForm from '@/components/items/ItemForm'
+import Sidebar from '@/components/sidebar/Sidebar'
+import { Plus, Menu } from 'lucide-react'
+
+export default function HomePage() {
+  const supabase = createClient()
+  const [items, setItems] = useState<HouseholdItem[]>([])
+  const [showForm, setShowForm] = useState(false)
+  const [editItem, setEditItem] = useState<HouseholdItem | null>(null)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [loading, setLoading] = useState(true)
+
+  const fetchItems = useCallback(async () => {
+    const { data } = await supabase
+      .from('household_items')
+      .select('*')
+      .order('expiry_date', { ascending: true })
+    if (data) setItems(data)
+    setLoading(false)
+  }, [supabase])
+
+  useEffect(() => {
+    fetchItems()
+
+    const channel = supabase
+      .channel('items-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'household_items' },
+        fetchItems
+      )
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [fetchItems, supabase])
+
+  async function handleDelete(id: string) {
+    await supabase.from('household_items').delete().eq('id', id)
+  }
+
+  function handleEdit(item: HouseholdItem) {
+    setEditItem(item)
+    setShowForm(true)
+  }
+
+  function handleFormClose() {
+    setShowForm(false)
+    setEditItem(null)
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="fixed inset-0 flex flex-col paper">
+      {/* Slim editorial top bar */}
+      <header className="flex items-center px-5 py-3 border-b border-stone-400/40 shrink-0">
+        <div className="font-mono text-[10px] tracking-[0.3em] uppercase text-stone-700">
+          The Kitchen Log
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+        <div className="ml-auto">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="p-1.5 rounded-md active:bg-stone-200 border border-stone-300"
+            aria-label="Open menu"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            <Menu size={18} className="text-stone-700" />
+          </button>
         </div>
+      </header>
+
+      {/* Main content */}
+      <main className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        {loading ? (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="font-mono text-xs tracking-[0.3em] uppercase text-stone-500 animate-pulse">
+              Loading…
+            </div>
+          </div>
+        ) : (
+          <FridgeView items={items} onEdit={handleEdit} onDelete={handleDelete} />
+        )}
       </main>
+
+      {/* FAB */}
+      <button
+        onClick={() => setShowForm(true)}
+        className="fixed z-30 w-14 h-14 bg-stone-900 text-stone-50 rounded-full shadow-lg flex items-center justify-center active:scale-95 transition-transform border-2 border-stone-50"
+        style={{
+          boxShadow: '0 6px 20px rgba(0, 0, 0, 0.25)',
+          bottom: 'max(1rem, env(safe-area-inset-bottom, 0px))',
+          right: 'max(1rem, env(safe-area-inset-right, 0px))',
+        }}
+        aria-label="Add item"
+      >
+        <Plus size={26} strokeWidth={2.5} />
+      </button>
+
+      {/* Item form modal */}
+      {showForm && (
+        <ItemForm
+          initialItem={editItem ?? undefined}
+          onSave={() => { handleFormClose(); fetchItems() }}
+          onClose={handleFormClose}
+        />
+      )}
+
+      {/* Sidebar */}
+      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
     </div>
-  );
+  )
 }
