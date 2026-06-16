@@ -10,12 +10,23 @@ const fredoka = Fredoka({ subsets: ["latin"], variable: "--font-magnet" });
 export const metadata: Metadata = {
   title: "Our Fridge",
   description: "A shared kitchen, kept in mind.",
+  applicationName: "Our Fridge",
+  appleWebApp: {
+    capable: true,
+    title: "Our Fridge",
+    statusBarStyle: "default",
+  },
+  formatDetection: {
+    telephone: false,
+  },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
+  viewportFit: "cover",
+  themeColor: "#E8E4D7",
 };
 
 export const dynamic = "force-dynamic";
