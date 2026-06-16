@@ -6,9 +6,10 @@ import { HouseholdItem, Category, Location, StorageArea, CATEGORY_LABELS, LOCATI
 import { LOCATIONS_BY_AREA, STORAGE_AREA_LABELS, getDefaultLocation } from '@/lib/storageAreas'
 import { fetchFridgeSuggestions, upsertFridgeSuggestion, type FridgeItemSuggestion } from '@/lib/suggestions'
 import { fileToResizedDataUrl, dataUrlToBlob } from '@/lib/doorPhotos'
+import { seedItemPhotoCache } from '@/lib/itemPhotoCache'
 import SuggestionNameInput from '@/components/items/SuggestionNameInput'
 import { DESKTOP_PAGE_COLUMN_CLASS } from '@/components/layout/ConstrainedPageShell'
-import { Camera, Image as ImageIcon, Loader2, ChevronLeft } from 'lucide-react'
+import { Image as ImageIcon, Loader2, ChevronLeft, Upload } from 'lucide-react'
 
 interface Props {
   initialItem?: Partial<HouseholdItem>
@@ -73,14 +74,19 @@ export default function ItemForm({ initialItem, defaultLocation, storageArea, on
   async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    if (!isSupabaseConfigured()) {
-      setError('Supabase is not configured — photos cannot sync to other devices.')
-      return
-    }
-    setUploading(true)
+
     setError(null)
+
     try {
       const dataUrl = await fileToResizedDataUrl(file)
+      setPhotoUrl(dataUrl)
+
+      if (!isSupabaseConfigured()) {
+        setError('Supabase is not configured — photos cannot sync to other devices.')
+        return
+      }
+
+      setUploading(true)
       const blob = await dataUrlToBlob(dataUrl)
       const path = `items/${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`
       const { error: uploadError } = await supabase.storage
@@ -88,11 +94,13 @@ export default function ItemForm({ initialItem, defaultLocation, storageArea, on
         .upload(path, blob, { contentType: 'image/jpeg' })
       if (uploadError) throw uploadError
       const { data } = supabase.storage.from('item-photos').getPublicUrl(path)
+      seedItemPhotoCache(data.publicUrl, dataUrl)
       setPhotoUrl(data.publicUrl)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Upload failed')
     } finally {
       setUploading(false)
+      if (fileRef.current) fileRef.current.value = ''
     }
   }
 
@@ -177,11 +185,16 @@ export default function ItemForm({ initialItem, defaultLocation, storageArea, on
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">Photo</label>
           <div className="flex gap-3 items-center">
-            <div className="w-20 h-20 rounded-xl border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden bg-slate-50 shrink-0">
+            <div className="relative w-20 h-20 rounded-xl border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden bg-slate-50 shrink-0">
               {photoUrl ? (
-                <img src={photoUrl} alt="item" className="w-full h-full object-cover" />
+                <img src={photoUrl} alt="item" className="w-full h-full object-cover" loading="eager" />
               ) : (
                 <ImageIcon size={24} className="text-slate-300" />
+              )}
+              {uploading && (
+                <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
+                  <Loader2 size={18} className="animate-spin text-stone-600" />
+                </div>
               )}
             </div>
             <div className="flex flex-col gap-2">
@@ -191,8 +204,8 @@ export default function ItemForm({ initialItem, defaultLocation, storageArea, on
                 disabled={uploading}
                 className="flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-xl text-sm font-medium text-slate-700 active:bg-slate-200 disabled:opacity-50"
               >
-                {uploading ? <Loader2 size={14} className="animate-spin" /> : <Camera size={14} />}
-                {uploading ? 'Uploading…' : 'Choose photo'}
+                {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+                {uploading ? 'Uploading…' : 'Upload'}
               </button>
               {photoUrl && (
                 <button
@@ -209,7 +222,6 @@ export default function ItemForm({ initialItem, defaultLocation, storageArea, on
             ref={fileRef}
             type="file"
             accept="image/*"
-            capture="environment"
             onChange={handlePhotoUpload}
             className="hidden"
           />

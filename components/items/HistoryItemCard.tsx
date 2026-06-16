@@ -1,6 +1,7 @@
 'use client'
 
 import { Image as ImageIcon } from 'lucide-react'
+import { useItemPhotoDisplay } from '@/components/items/useItemPhotoDisplay'
 
 interface Props {
   item: { name: string; photo_url: string | null }
@@ -8,6 +9,8 @@ interface Props {
 }
 
 export default function HistoryItemCard({ item, onClick }: Props) {
+  const photoSrc = useItemPhotoDisplay(item.photo_url)
+
   return (
     <button
       type="button"
@@ -16,10 +19,16 @@ export default function HistoryItemCard({ item, onClick }: Props) {
       style={{ height: '120px' }}
     >
       <div className="relative w-full h-full">
-        {item.photo_url ? (
+        {photoSrc ? (
           <>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={item.photo_url} alt={item.name} className="w-full h-full object-cover" />
+            <img
+              src={photoSrc}
+              alt={item.name}
+              className="w-full h-full object-cover"
+              loading="eager"
+              decoding="async"
+            />
             <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-stone-900/85 via-stone-900/45 to-transparent pt-5 pb-1 px-1.5">
               <span className="font-mono text-[8px] text-white font-bold uppercase tracking-wider line-clamp-2 leading-tight">
                 {item.name}

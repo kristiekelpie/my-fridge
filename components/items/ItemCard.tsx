@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { HouseholdItem, CATEGORY_LABELS, CATEGORY_EMOJI, getExpiryStatus, EXPIRY_STATUS_CONFIG, normalizeCategory, daysUntilExpiry } from '@/lib/types'
+import { useItemPhotoDisplay } from '@/components/items/useItemPhotoDisplay'
 import { Pencil, Trash2 } from 'lucide-react'
 
 interface Props {
@@ -17,6 +18,7 @@ export default function ItemCard({ item, onEdit, onDelete }: Props) {
   const statusCfg = EXPIRY_STATUS_CONFIG[status]
 
   const diffDays = daysUntilExpiry(item.expiry_date)
+  const photoSrc = useItemPhotoDisplay(item.photo_url)
 
   const expiryLabel =
     diffDays < 0
@@ -36,12 +38,14 @@ export default function ItemCard({ item, onEdit, onDelete }: Props) {
       <div className={`card-flip-inner ${flipped ? 'flipped' : ''}`} style={{ height: '120px' }}>
         {/* Front face */}
         <div className="card-face rounded-md overflow-hidden bg-white border border-stone-900/90 shadow-sm">
-          {item.photo_url ? (
+          {photoSrc ? (
             <>
               <img
-                src={item.photo_url}
+                src={photoSrc}
                 alt={item.name}
                 className="w-full h-full object-cover"
+                loading="eager"
+                decoding="async"
               />
               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-stone-900/85 via-stone-900/45 to-transparent pt-5 pb-1 px-1.5">
                 <span className="font-mono text-[8px] text-white font-bold uppercase tracking-wider line-clamp-2 leading-tight">

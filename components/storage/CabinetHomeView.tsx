@@ -15,6 +15,7 @@ import {
   SwipeHint,
   TapToOpenDesktop,
   TapToOpenMobile,
+  TapToOpenCupboardMobile,
   TapToOpenWineMobile,
 } from './StorageStamps'
 
@@ -70,7 +71,7 @@ export default function CabinetHomeView({
           {area === 'cupboard' ? (
             <div
               className="absolute z-20 -rotate-6"
-              style={{ top: '2%', right: '10%', transform: 'translateY(-10%) rotate(-6deg)' }}
+              style={{ top: '16%', right: '10%', transform: 'rotate(-6deg)' }}
             >
               <InstockStamp totalItems={totalItems} compact onClick={onOpenInventory} />
             </div>
@@ -88,7 +89,11 @@ export default function CabinetHomeView({
             </>
           )}
 
-          {area !== 'wine_fridge' && <TapToOpenMobile />}
+          {area === 'cupboard' ? (
+            <TapToOpenCupboardMobile />
+          ) : area === 'pantry' ? (
+            <TapToOpenMobile />
+          ) : null}
           <TapToOpenDesktop />
           <SwipeHint show={showSwipeHint} />
 
@@ -102,7 +107,7 @@ export default function CabinetHomeView({
               </div>
               <div
                 className="sm:hidden absolute z-20 -rotate-3"
-                style={{ top: '76%', right: '-0.75rem', transform: 'translate(22%, 0) rotate(-3deg)' }}
+                style={{ top: '68%', right: '-1rem', transform: 'translate(34%, 0) rotate(-3deg)' }}
               >
                 <ExpiringStamp count={expiringCount} compact onClick={onOpenExpiring} />
               </div>
@@ -110,13 +115,13 @@ export default function CabinetHomeView({
           )}
 
           <div className="relative">
+            {area === 'wine_fridge' && <TapToOpenWineMobile />}
             <button
               type="button"
               onClick={() => setIsOpen(true)}
               className="block w-fit mx-auto relative"
               aria-label={`Open ${STORAGE_AREA_HEADING[area]}`}
             >
-              {area === 'wine_fridge' && <TapToOpenWineMobile />}
               <CabinetClosed
                 area={area}
                 className={

@@ -141,7 +141,7 @@ export function TapToOpenMobile({
   return (
     <div
       className={`absolute z-10 pointer-events-none sm:hidden ${className}`}
-      style={{ top: '29%', left: '-22%', ...style }}
+      style={{ top: '29%', left: '-9%', ...style }}
     >
       <div className="grid grid-cols-[auto_1fr] gap-x-0.5 -rotate-6">
         <span className="font-mono text-stone-900 text-[9px] leading-[1.15]">✻</span>
@@ -154,20 +154,37 @@ export function TapToOpenMobile({
   )
 }
 
+export function TapToOpenCupboardMobile() {
+  return (
+    <div
+      className="absolute z-10 pointer-events-none sm:hidden"
+      style={{ top: '2%', left: '8%' }}
+    >
+      <div className="flex flex-col items-start -rotate-3">
+        <div className="grid grid-cols-[auto_1fr] gap-x-0.5">
+          <span className="font-mono text-stone-900 text-[9px] leading-[1.15]">✻</span>
+          <span className="font-mono text-[9px] font-bold tracking-wide text-stone-900 leading-[1.15]">tap</span>
+          <span className="col-start-2 font-mono text-[9px] font-bold tracking-wide text-stone-900 leading-[1.15]">to</span>
+          <span className="col-start-2 font-mono text-[9px] font-bold tracking-wide text-stone-900 leading-[1.15]">open</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function TapToOpenWineMobile() {
   return (
     <div
-      className="absolute z-10 pointer-events-none sm:hidden left-1/2 -translate-x-1/2"
-      style={{ top: '11%' }}
+      className="absolute z-20 pointer-events-none sm:hidden"
+      style={{ bottom: '18%', left: '-18%' }}
     >
-      <div className="flex flex-col items-center -rotate-2">
-        <div className="grid grid-cols-[auto_1fr] gap-x-0.5 rounded-sm bg-stone-50/90 px-1 py-0.5 shadow-sm">
-          <span className="font-mono text-stone-900 text-[8px] leading-[1.1]">✻</span>
-          <span className="font-mono text-[8px] font-bold tracking-wide text-stone-900 leading-[1.1]">tap</span>
-          <span className="col-start-2 font-mono text-[8px] font-bold tracking-wide text-stone-900 leading-[1.1]">to</span>
-          <span className="col-start-2 font-mono text-[8px] font-bold tracking-wide text-stone-900 leading-[1.1]">open</span>
+      <div className="flex flex-col items-start -rotate-3">
+        <div className="grid grid-cols-[auto_1fr] gap-x-0.5">
+          <span className="font-mono text-stone-900 text-[9px] leading-[1.15]">✻</span>
+          <span className="font-mono text-[9px] font-bold tracking-wide text-stone-900 leading-[1.15]">tap</span>
+          <span className="col-start-2 font-mono text-[9px] font-bold tracking-wide text-stone-900 leading-[1.15]">to</span>
+          <span className="col-start-2 font-mono text-[9px] font-bold tracking-wide text-stone-900 leading-[1.15]">open</span>
         </div>
-        <HandDrawnArrow toward="right" compact className="mt-0.5 ml-2 scale-90" />
       </div>
     </div>
   )

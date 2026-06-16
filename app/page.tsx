@@ -14,6 +14,7 @@ import StorageSwiper from '@/components/storage/StorageSwiper'
 import { DoorPhotosProvider } from '@/components/fridge/DoorPhotosContext'
 import CabinetHomeView from '@/components/storage/CabinetHomeView'
 import { filterItemsByArea, STORAGE_AREA_LABELS } from '@/lib/storageAreas'
+import { warmItemPhotoCache } from '@/lib/itemPhotoCache'
 import { Plus, Menu } from 'lucide-react'
 
 type FullPageView = 'history' | 'inventory' | 'master-inventory' | 'expiring'
@@ -84,6 +85,10 @@ export default function HomePage() {
 
     return () => { supabase.removeChannel(channel) }
   }, [fetchItems, supabase])
+
+  useEffect(() => {
+    warmItemPhotoCache(items.map(i => i.photo_url))
+  }, [items])
 
   async function handleDelete(id: string) {
     const previous = items

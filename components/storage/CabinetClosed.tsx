@@ -56,7 +56,6 @@ function CupboardSvg() {
       {/* Subtle grain lines */}
       <line x1="28" y1="60" x2="118" y2="60" stroke="#D4BC98" strokeWidth="0.4" opacity="0.5" />
       <line x1="152" y1="80" x2="242" y2="80" stroke="#D4BC98" strokeWidth="0.4" opacity="0.5" />
-      <ellipse cx="140" cy="262" rx="100" ry="5" fill="#000" opacity="0.12" />
     </svg>
   )
 }
@@ -114,13 +113,17 @@ function WineFridgeSvg() {
 }
 
 export default function CabinetClosed({ area, className = '' }: Props) {
+  const showFloorShadow = area !== 'cupboard'
+
   return (
-    <div className={`relative mx-auto block w-fit max-w-full pb-4 ${className}`}>
+    <div className={`relative mx-auto block w-fit max-w-full ${showFloorShadow ? 'pb-4' : 'pb-0'} ${className}`}>
+      {showFloorShadow && (
       <div
         aria-hidden
         className="pointer-events-none absolute left-1/2 z-0 -translate-x-1/2 rounded-[50%] bg-stone-900/30 blur-[18px]"
         style={{ bottom: '-0.15rem', width: '82%', height: '1.35rem' }}
       />
+      )}
       <div className="relative z-[1] h-full w-full flex items-end justify-center">
         {area === 'pantry' && <PantrySvg />}
         {area === 'cupboard' && <CupboardSvg />}

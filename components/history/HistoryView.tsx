@@ -11,6 +11,7 @@ import {
   type FridgeItemSuggestion,
 } from '@/lib/suggestions'
 import HistoryItemCard from '@/components/items/HistoryItemCard'
+import { warmItemPhotoCache } from '@/lib/itemPhotoCache'
 import CategoryListPage from '@/components/fridge/CategoryListPage'
 import CollapsibleCategorySection from '@/components/fridge/CollapsibleCategorySection'
 
@@ -40,6 +41,10 @@ export default function HistoryView({ onBack, onAddToFridge }: Props) {
 
     return () => { supabase.removeChannel(sub) }
   }, [fetchHistory, supabase])
+
+  useEffect(() => {
+    warmItemPhotoCache(historyItems.map(i => i.photo_url))
+  }, [historyItems])
 
   const groups = groupFridgeSuggestionsByCategory(historyItems)
 
