@@ -27,6 +27,7 @@ create table if not exists fridge_item_suggestions (
   category text not null check (category in ('protein', 'vegetables', 'dairy', 'sauces', 'starch', 'cooked_food', 'fruits', 'condiments', 'drinks', 'other')),
   location text not null check (location in ('freezer', 'shelf1', 'shelf2', 'upper_drawer', 'shelf3', 'lower_drawer', 'door')),
   notes text,
+  photo_url text,
   use_count int not null default 1,
   last_used_at timestamptz default now() not null,
   created_at timestamptz default now() not null
@@ -54,10 +55,23 @@ drop policy if exists "Public can do everything on shopping suggestions" on shop
 create policy "Public can do everything on shopping suggestions"
   on shopping_suggestions for all using (true) with check (true);
 
+-- Photo on suggestion history
+alter table fridge_item_suggestions add column if not exists photo_url text;
+
+update fridge_item_suggestions s
+set photo_url = hi.photo_url
+from (
+  select distinct on (lower(trim(name))) lower(trim(name)) as nn, photo_url
+  from household_items
+  where photo_url is not null
+  order by lower(trim(name)), updated_at desc
+) hi
+where s.name_normalized = hi.nn and (s.photo_url is null or s.photo_url = '');
+
 -- Seed from existing items (safe to re-run)
-insert into fridge_item_suggestions (name, name_normalized, category, location, notes, use_count, last_used_at)
+insert into fridge_item_suggestions (name, name_normalized, category, location, notes, photo_url, use_count, last_used_at)
 select distinct on (lower(trim(name)))
-  trim(name), lower(trim(name)), category, location, notes, 1, updated_at
+  trim(name), lower(trim(name)), category, location, notes, photo_url, 1, updated_at
 from household_items
 order by lower(trim(name)), updated_at desc
 on conflict (name_normalized) do nothing;

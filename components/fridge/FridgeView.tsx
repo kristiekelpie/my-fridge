@@ -2,11 +2,10 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { HouseholdItem, Location, MealNote, ShoppingItem, isExpiringWithinDays } from '@/lib/types'
+import { HouseholdItem, Location, MealNote, ShoppingItem, isExpiringWithinDays, EXPIRING_SOON_DAYS } from '@/lib/types'
 import FridgeClosed from './FridgeClosed'
 import FridgeInteriorOpen from './FridgeInteriorOpen'
 import ZoneInterior from './ZoneInterior'
-import ItemListByCategory from './ItemListByCategory'
 import KitchenNotesView from '@/components/kitchen/KitchenNotesView'
 import { fetchDoorPhotoUrls, uploadDoorPhoto } from '@/lib/fridgeDoor'
 import { isSupabaseConfigured } from '@/lib/supabase/client'
@@ -16,6 +15,8 @@ interface Props {
   items: HouseholdItem[]
   onEdit: (item: HouseholdItem) => void
   onDelete: (id: string) => void
+  onOpenInventory: () => void
+  onOpenExpiring: () => void
 }
 
 const ALL_ZONES: Location[] = ['freezer', 'shelf1', 'shelf2', 'upper_drawer', 'shelf3', 'lower_drawer', 'door']
@@ -23,7 +24,42 @@ const ALL_ZONES: Location[] = ['freezer', 'shelf1', 'shelf2', 'upper_drawer', 's
 const FRIDGE_HEIGHT_CLASS =
   'h-[min(calc(100dvh-6rem),calc(100dvh-env(safe-area-inset-bottom)-6rem),600px)] sm:h-[min(calc(100dvh-2.5rem),calc(100dvh-env(safe-area-inset-bottom)-2.5rem),680px)]'
 
-type ListView = 'instock' | 'expiring'
+const HAND_ARROW = {
+  stroke: '#1A1A1A',
+  strokeWidth: 1.2,
+  fill: 'none',
+  strokeLinecap: 'round' as const,
+}
+
+/** Hand-drawn curved arrow — same style as expiring stamp, mirrored for direction */
+function HandDrawnArrow({
+  toward,
+  compact = false,
+  className = '',
+}: {
+  toward: 'left' | 'right'
+  compact?: boolean
+  className?: string
+}) {
+  const w = compact ? 48 : 64
+  const h = compact ? 32 : 36
+
+  if (toward === 'left') {
+    return (
+      <svg width={w} height={h} viewBox="0 0 80 46" className={className}>
+        <path d="M 75 5 Q 50 5 40 22 T 5 38" {...HAND_ARROW} />
+        <path d="M 10 33 L 4 38 L 10 43" {...HAND_ARROW} />
+      </svg>
+    )
+  }
+
+  return (
+    <svg width={w} height={h} viewBox="0 0 80 46" className={className}>
+      <path d="M 5 5 Q 30 5 40 22 T 75 38" {...HAND_ARROW} />
+      <path d="M 70 33 L 76 38 L 70 43" {...HAND_ARROW} />
+    </svg>
+  )
+}
 
 function InstockStamp({
   totalItems,
@@ -41,7 +77,7 @@ function InstockStamp({
         e.stopPropagation()
         onClick()
       }}
-      className={`border-2 border-stone-900 rounded-sm bg-stone-50/60 active:scale-[0.98] transition-transform cursor-pointer ${compact ? 'px-1.5 py-0.5' : 'px-2 py-0.5'}`}
+      className={`border border-stone-900 rounded-sm bg-stone-50/60 active:scale-[0.98] transition-transform cursor-pointer ${compact ? 'px-1.5 py-0.5' : 'px-2 py-0.5'}`}
       aria-label="View inventory"
     >
       <p className={`font-mono font-bold tracking-tight text-stone-900 leading-none whitespace-nowrap ${compact ? 'text-[11px]' : 'text-lg'}`}>
@@ -63,8 +99,6 @@ function ExpiringStamp({
   compact?: boolean
   onClick: () => void
 }) {
-  if (count <= 0) return null
-
   return (
     <button
       type="button"
@@ -79,20 +113,13 @@ function ExpiringStamp({
         EXPIRING
       </p>
       <p className={`font-mono text-stone-700 mt-0.5 leading-snug ${compact ? 'text-[7px]' : 'text-[9px]'}`}>
-        <span className="text-amber-700 font-bold">{count}</span>
+        <span className={`font-bold ${count > 0 ? 'text-amber-700' : 'text-stone-400'}`}>{count}</span>
       </p>
-      {!compact && (
-        <svg width="64" height="36" viewBox="0 0 80 46" className="mt-0.5 ml-auto hidden sm:block">
-          <path d="M 75 5 Q 50 5 40 22 T 5 38" stroke="#1A1A1A" strokeWidth="1.2" fill="none" strokeLinecap="round" />
-          <path d="M 10 33 L 4 38 L 10 43" stroke="#1A1A1A" strokeWidth="1.2" fill="none" strokeLinecap="round" />
-        </svg>
-      )}
-      {compact && (
-        <svg width="48" height="32" viewBox="0 0 80 46" className="mt-0.5 mr-auto ml-0">
-          <path d="M 75 5 Q 50 5 40 22 T 5 38" stroke="#1A1A1A" strokeWidth="1.2" fill="none" strokeLinecap="round" />
-          <path d="M 10 33 L 4 38 L 10 43" stroke="#1A1A1A" strokeWidth="1.2" fill="none" strokeLinecap="round" />
-        </svg>
-      )}
+      <HandDrawnArrow
+        toward="left"
+        compact={compact}
+        className={`mt-0.5 ${compact ? 'mr-auto ml-0' : 'ml-auto'}`}
+      />
     </button>
   )
 }
@@ -101,21 +128,12 @@ function ExpiringStamp({
 function TapToOpenMobile() {
   return (
     <div className="absolute z-10 pointer-events-none sm:hidden" style={{ top: '29%', left: '-22%' }}>
-      <div className="flex items-start gap-0.5 -rotate-6">
-        <span className="font-mono text-stone-900 text-[10px] leading-none mt-0.5">✻</span>
-        <div>
-          <p className="font-mono text-[9px] font-bold tracking-wide text-stone-900 leading-[1.15]">
-            tap
-            <br />
-            to
-            <br />
-            open
-          </p>
-          <svg width="44" height="36" viewBox="0 0 56 44" className="mt-0.5 ml-3">
-            <path d="M 4 8 Q 22 6 32 18 T 48 32" stroke="#1A1A1A" strokeWidth="1.2" fill="none" strokeLinecap="round" />
-            <path d="M 43 27 L 50 32 L 43 37" stroke="#1A1A1A" strokeWidth="1.2" fill="none" strokeLinecap="round" />
-          </svg>
-        </div>
+      <div className="grid grid-cols-[auto_1fr] gap-x-0.5 -rotate-6">
+        <span className="font-mono text-stone-900 text-[9px] leading-[1.15]">✻</span>
+        <span className="font-mono text-[9px] font-bold tracking-wide text-stone-900 leading-[1.15]">tap</span>
+        <span className="col-start-2 font-mono text-[9px] font-bold tracking-wide text-stone-900 leading-[1.15]">to</span>
+        <span className="col-start-2 font-mono text-[9px] font-bold tracking-wide text-stone-900 leading-[1.15]">open</span>
+        <HandDrawnArrow toward="right" compact className="col-span-2 mt-0.5 ml-3" />
       </div>
     </div>
   )
@@ -134,20 +152,16 @@ function TapToOpenDesktop() {
           TAP&nbsp;TO&nbsp;OPEN
         </span>
       </div>
-      <svg width="64" height="40" viewBox="0 0 80 50" className="mt-0.5 ml-2">
-        <path d="M 5 5 Q 30 5 40 20 T 75 35" stroke="#1A1A1A" strokeWidth="1.2" fill="none" strokeLinecap="round" />
-        <path d="M 70 30 L 76 35 L 70 40" stroke="#1A1A1A" strokeWidth="1.2" fill="none" strokeLinecap="round" />
-      </svg>
+      <HandDrawnArrow toward="right" className="mt-0.5 ml-2" />
     </div>
   )
 }
 
-export default function FridgeView({ items, onEdit, onDelete }: Props) {
+export default function FridgeView({ items, onEdit, onDelete, onOpenInventory, onOpenExpiring }: Props) {
   const supabase = createClient()
   const [isOpen, setIsOpen] = useState(false)
   const [selectedZone, setSelectedZone] = useState<Location | null>(null)
   const [kitchenNotesOpen, setKitchenNotesOpen] = useState(false)
-  const [listView, setListView] = useState<ListView | null>(null)
   const [upperPhotoUrl, setUpperPhotoUrl] = useState<string | null>(null)
   const [lowerPhotoUrl, setLowerPhotoUrl] = useState<string | null>(null)
   const [leftPhotoUrl, setLeftPhotoUrl] = useState<string | null>(null)
@@ -160,8 +174,7 @@ export default function FridgeView({ items, onEdit, onDelete }: Props) {
   }, {} as Partial<Record<Location, number>>)
 
   const totalItems = items.length
-  const expiringItems = items.filter(i => isExpiringWithinDays(i.expiry_date, 3))
-  const expiringCount = expiringItems.length
+  const expiringCount = items.filter(i => isExpiringWithinDays(i.expiry_date, EXPIRING_SOON_DAYS)).length
 
   const setPhotoForSlot = useCallback((slot: PolaroidSlot, url: string | null) => {
     if (slot === 'upper') setUpperPhotoUrl(url)
@@ -228,6 +241,10 @@ export default function FridgeView({ items, onEdit, onDelete }: Props) {
     setPhotoForSlot(slot, url)
   }
 
+  function handleOpenFreezer() {
+    setSelectedZone('freezer')
+  }
+
   function handleZoneClick(zone: Location) {
     setSelectedZone(zone)
   }
@@ -248,32 +265,6 @@ export default function FridgeView({ items, onEdit, onDelete }: Props) {
     return <KitchenNotesView onBack={() => setKitchenNotesOpen(false)} />
   }
 
-  if (listView === 'instock') {
-    return (
-      <ItemListByCategory
-        title="Inventory"
-        subtitle={`${totalItems} item${totalItems !== 1 ? 's' : ''} — grouped by category`}
-        items={items}
-        onBack={() => setListView(null)}
-        onEdit={onEdit}
-        onDelete={onDelete}
-      />
-    )
-  }
-
-  if (listView === 'expiring') {
-    return (
-      <ItemListByCategory
-        title="Expiring Soon"
-        subtitle={`${expiringCount} item${expiringCount !== 1 ? 's' : ''} — grouped by category`}
-        items={expiringItems}
-        onBack={() => setListView(null)}
-        onEdit={onEdit}
-        onDelete={onDelete}
-      />
-    )
-  }
-
   if (selectedZone) {
     const zoneItems = items.filter(i => i.location === selectedZone)
     return (
@@ -290,12 +281,12 @@ export default function FridgeView({ items, onEdit, onDelete }: Props) {
   if (isOpen) {
     return (
       <div className="flex-1 flex flex-col min-h-0 paper overflow-hidden">
-        <p
-          className="shrink-0 font-mono text-[10px] tracking-wider text-stone-500 text-center uppercase pt-2 pb-1 px-3 cursor-pointer"
-          onClick={handleCloseFridge}
+        <div
+          className="shrink-0 font-mono text-[10px] tracking-wider text-stone-500 text-center uppercase pt-2 pb-1 px-3"
         >
-          Tap a zone to view items
-        </p>
+          <p>Tap a zone to view items</p>
+          <p className="mt-0.5">Tap outside to close fridge</p>
+        </div>
 
         <div
           className="flex-1 flex items-center justify-center min-h-0 w-full px-2 cursor-pointer"
@@ -320,7 +311,7 @@ export default function FridgeView({ items, onEdit, onDelete }: Props) {
 
   return (
     <div className="flex-1 flex flex-col min-h-0 paper overflow-hidden">
-      <div className="flex-1 flex flex-col items-center justify-center min-h-0 px-3 sm:px-6 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2 overflow-x-hidden sm:overflow-visible">
+      <div className="flex-1 flex flex-col items-center justify-center min-h-0 px-3 sm:px-6 pt-[max(0.5rem,env(safe-area-inset-top))] pb-4 overflow-visible">
         <div className="shrink-0 mb-1 text-center px-4 sm:px-8">
           <p className="font-mono text-[10px] tracking-[0.25em] uppercase text-stone-500">
             Nic + Kris
@@ -338,7 +329,7 @@ export default function FridgeView({ items, onEdit, onDelete }: Props) {
             className="absolute z-20 sm:hidden -rotate-6"
             style={{ top: '3%', left: '76%' }}
           >
-            <InstockStamp totalItems={totalItems} compact onClick={() => setListView('instock')} />
+            <InstockStamp totalItems={totalItems} compact onClick={onOpenInventory} />
           </div>
 
           {/* Desktop: instock off right edge */}
@@ -346,32 +337,29 @@ export default function FridgeView({ items, onEdit, onDelete }: Props) {
             className="hidden sm:block absolute z-10"
             style={{ top: '2%', left: '100%', marginLeft: '-0.5rem', transform: 'rotate(-4deg)' }}
           >
-            <InstockStamp totalItems={totalItems} onClick={() => setListView('instock')} />
+            <InstockStamp totalItems={totalItems} onClick={onOpenInventory} />
           </div>
 
           <TapToOpenMobile />
           <TapToOpenDesktop />
 
-          {expiringCount > 0 && (
-            <div
-              className="hidden sm:block absolute z-10"
-              style={{ bottom: '14%', left: '100%', marginLeft: '0.25rem' }}
-            >
-              <ExpiringStamp count={expiringCount} onClick={() => setListView('expiring')} />
-            </div>
-          )}
+          <div
+            className="hidden sm:block absolute z-20"
+            style={{ bottom: '14%', left: '100%', marginLeft: '0.25rem' }}
+          >
+            <ExpiringStamp count={expiringCount} onClick={onOpenExpiring} />
+          </div>
 
-          {expiringCount > 0 && (
-            <div
-              className="sm:hidden absolute z-10"
-              style={{ bottom: '22%', left: '100%', marginLeft: '0.15rem' }}
-            >
-              <ExpiringStamp count={expiringCount} compact onClick={() => setListView('expiring')} />
-            </div>
-          )}
+          <div
+            className="sm:hidden absolute z-20 -rotate-3"
+            style={{ top: '75%', left: '100%', marginLeft: '0.15rem' }}
+          >
+            <ExpiringStamp count={expiringCount} compact onClick={onOpenExpiring} />
+          </div>
 
           <FridgeClosed
             onOpen={() => setIsOpen(true)}
+            onOpenFreezer={handleOpenFreezer}
             onOpenNotes={() => setKitchenNotesOpen(true)}
             notes={notes}
             shopping={shopping}

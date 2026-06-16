@@ -6,7 +6,7 @@ import { MealNote, ShoppingItem, Store, ShoppingCategory, SHOPPING_CATEGORY_LABE
 import { toggleShoppingItemChecked } from '@/lib/shoppingActions'
 import { fetchShoppingSuggestions, upsertShoppingSuggestion, type ShoppingSuggestion } from '@/lib/suggestions'
 import SuggestionNameInput from '@/components/items/SuggestionNameInput'
-import { ChevronLeft, Plus, Trash2, Pencil } from 'lucide-react'
+import { ChevronLeft, Trash2, Pencil } from 'lucide-react'
 
 const STORES: Store[] = ['Costco', 'Walmart', 'Albertsons', 'Any', 'Other']
 const CATEGORIES: ShoppingCategory[] = ['food', 'household', 'personal']
@@ -218,17 +218,17 @@ export default function KitchenNotesView({ onBack }: Props) {
         </p>
       )}
 
-      <div className="flex border-b border-stone-300 shrink-0">
+      <div className="flex border-b border-slate-200 shrink-0">
         {(['notes', 'shopping'] as Tab[]).map(t => (
           <button
             key={t}
             type="button"
             onClick={() => setTab(t)}
-            className={`flex-1 py-3 font-mono text-xl tracking-tight border-b-2 transition-colors ${
-              tab === t ? 'border-stone-900 text-stone-900' : 'border-transparent text-stone-500'
+            className={`flex-1 py-3 font-mono text-base font-bold tracking-tight border-b-2 transition-colors ${
+              tab === t ? 'border-stone-900 text-stone-900' : 'border-transparent text-slate-500'
             }`}
           >
-            <span className={tab === t ? 'editorial-underline font-bold' : 'font-bold'}>
+            <span className={tab === t ? 'editorial-underline' : ''}>
               {t === 'notes' ? 'Meal Notes' : 'Shopping List'}
             </span>
           </button>
@@ -237,31 +237,31 @@ export default function KitchenNotesView({ onBack }: Props) {
 
       {tab === 'notes' && (
         <div className="flex-1 flex flex-col min-h-0">
-          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+          <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {notes.length === 0 && (
-              <p className="font-mono text-[10px] tracking-wider uppercase text-stone-400 text-center py-12">no notes yet</p>
+              <p className="font-mono text-sm text-slate-400 text-center py-8 tracking-tight">No meal notes yet</p>
             )}
             {notes.map(note => (
-              <div key={note.id} className="bg-orange-50/80 border border-orange-200/60 rounded-xl p-3 relative">
+              <div key={note.id} className="bg-stone-50 border border-stone-900/90 shadow-sm rounded-xl p-3 relative">
                 {editingNoteId === note.id ? (
                   <div className="space-y-2 pr-1">
                     <input
                       type="text"
                       value={editNoteTitle}
                       onChange={e => setEditNoteTitle(e.target.value)}
-                      className="w-full border border-stone-300 rounded-lg px-2 py-1.5 text-sm bg-white"
+                      className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                     <textarea
                       value={editNoteContent}
                       onChange={e => setEditNoteContent(e.target.value)}
                       rows={3}
-                      className="w-full border border-stone-300 rounded-lg px-2 py-1.5 text-sm bg-white resize-none"
+                      className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                     />
                     <div className="flex gap-2">
-                      <button type="button" onClick={saveEditNote} className="flex-1 py-1.5 bg-stone-900 text-white rounded-lg text-xs font-mono uppercase">
+                      <button type="button" onClick={saveEditNote} className="flex-1 py-2 bg-stone-900 text-white rounded-xl text-sm font-semibold">
                         Save
                       </button>
-                      <button type="button" onClick={() => setEditingNoteId(null)} className="flex-1 py-1.5 border border-stone-300 rounded-lg text-xs font-mono uppercase">
+                      <button type="button" onClick={() => setEditingNoteId(null)} className="flex-1 py-2 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700">
                         Cancel
                       </button>
                     </div>
@@ -269,16 +269,16 @@ export default function KitchenNotesView({ onBack }: Props) {
                 ) : (
                   <>
                     <div className="absolute top-2 right-2 flex gap-1">
-                      <button type="button" onClick={() => startEditNote(note)} className="p-1.5 text-stone-400 active:text-stone-700">
+                      <button type="button" onClick={() => startEditNote(note)} className="p-1 text-slate-400 active:text-slate-700">
                         <Pencil size={14} />
                       </button>
-                      <button type="button" onClick={() => deleteNote(note.id)} className="p-1.5 text-stone-400 active:text-red-600">
-                        <Trash2 size={15} />
+                      <button type="button" onClick={() => deleteNote(note.id)} className="p-1 text-slate-400 active:text-red-500">
+                        <Trash2 size={14} />
                       </button>
                     </div>
-                    <h4 className="font-mono text-sm font-semibold text-stone-800 pr-16">{note.title}</h4>
-                    <p className="font-mono text-sm text-stone-600 mt-1 whitespace-pre-wrap">{note.content}</p>
-                    <p className="font-mono text-[9px] text-stone-400 mt-2 tracking-wider">
+                    <h4 className="text-sm font-semibold text-slate-800 pr-6">{note.title}</h4>
+                    <p className="text-xs text-slate-600 mt-1 whitespace-pre-wrap">{note.content}</p>
+                    <p className="text-xs text-slate-400 mt-1.5">
                       {new Date(note.created_at).toLocaleDateString()}
                     </p>
                   </>
@@ -286,27 +286,27 @@ export default function KitchenNotesView({ onBack }: Props) {
               </div>
             ))}
           </div>
-          <div className="p-4 border-t border-stone-300 shrink-0 flex justify-center">
-            <div className="w-full max-w-xs space-y-2">
+          <div className="p-4 border-t border-slate-200 shrink-0">
+            <div className="w-full space-y-2">
               <input
                 type="text"
                 value={newNoteTitle}
                 onChange={e => setNewNoteTitle(e.target.value)}
                 placeholder="Title"
-                className="w-full border border-stone-300 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-stone-400"
+                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <textarea
                 value={newNoteContent}
                 onChange={e => setNewNoteContent(e.target.value)}
                 placeholder="Note…"
                 rows={3}
-                className="w-full border border-stone-300 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-stone-400 resize-none"
+                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
               />
               <button
                 type="button"
                 onClick={addNote}
                 disabled={savingNote || !newNoteTitle.trim() || !newNoteContent.trim()}
-                className="w-full bg-stone-900 text-stone-50 rounded-xl py-3 text-sm font-mono tracking-wider uppercase disabled:opacity-50"
+                className="w-full bg-stone-900 text-white rounded-xl py-2.5 text-sm font-semibold disabled:opacity-50"
               >
                 Add Note
               </button>
@@ -317,9 +317,9 @@ export default function KitchenNotesView({ onBack }: Props) {
 
       {tab === 'shopping' && (
         <div className="flex-1 flex flex-col min-h-0">
-          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {shopping.length === 0 && (
-              <p className="font-mono text-[10px] tracking-wider uppercase text-stone-400 text-center py-12">list is empty</p>
+              <p className="font-mono text-sm text-slate-400 text-center py-8 tracking-tight">Shopping list is empty</p>
             )}
             {STORES.map(store => {
               const items = groupedShopping[store]
@@ -327,16 +327,16 @@ export default function KitchenNotesView({ onBack }: Props) {
               return (
                 <div key={store}>
                   <div className="flex items-center gap-1.5 mb-2">
-                    <span className="font-mono text-[10px] font-semibold text-stone-500 uppercase tracking-wider">{store}</span>
+                    <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{store}</span>
                   </div>
                   <div className="space-y-1.5">
                     {items.map(item => (
-                      <div key={item.id} className="flex items-center gap-3 bg-white border border-stone-200 rounded-xl px-3 py-2.5">
+                      <div key={item.id} className="flex items-center gap-3 bg-stone-50 border border-stone-900/90 shadow-sm rounded-xl px-3 py-2.5">
                         <button
                           type="button"
                           onClick={() => toggleShoppingItem(item)}
-                          className={`w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center ${
-                            item.checked ? 'bg-green-600 border-green-600' : 'border-stone-300'
+                          className={`w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center transition-colors ${
+                            item.checked ? 'bg-green-500 border-green-500' : 'border-slate-300'
                           }`}
                         >
                           {item.checked && (
@@ -345,16 +345,14 @@ export default function KitchenNotesView({ onBack }: Props) {
                             </svg>
                           )}
                         </button>
-                        <div className="flex-1 min-w-0">
-                          <span className={`block text-sm truncate ${item.checked ? 'line-through text-stone-400' : 'text-stone-700'}`}>
-                            {item.name}
-                          </span>
-                          <span className="font-mono text-[9px] uppercase tracking-wider text-stone-400">
-                            {SHOPPING_CATEGORY_LABELS[item.category]}
-                          </span>
-                        </div>
-                        <button type="button" onClick={() => deleteShoppingItem(item.id)} className="p-1 text-stone-300 active:text-red-500">
-                          <Trash2 size={14} />
+                        <span className={`flex-1 text-sm ${item.checked ? 'line-through text-slate-400' : 'text-slate-700'}`}>
+                          {item.name}
+                        </span>
+                        <span className="font-mono text-[9px] uppercase text-slate-400 shrink-0">
+                          {SHOPPING_CATEGORY_LABELS[item.category ?? 'food']}
+                        </span>
+                        <button type="button" onClick={() => deleteShoppingItem(item.id)} className="p-1 text-slate-300 active:text-red-400">
+                          <Trash2 size={13} />
                         </button>
                       </div>
                     ))}
@@ -363,50 +361,46 @@ export default function KitchenNotesView({ onBack }: Props) {
               )
             })}
           </div>
-          <div className="p-4 border-t border-stone-300 shrink-0 flex justify-center">
-            <div className="w-full max-w-xs space-y-2">
-              <div className="flex gap-2 items-start">
-                <div className="flex-1 min-w-0">
-                  <SuggestionNameInput
-                    value={newShoppingName}
-                    onChange={setNewShoppingName}
-                    suggestions={shoppingSuggestions}
-                    onSelectSuggestion={s => {
-                      setNewShoppingName(s.name)
-                      if (s.store) setNewShoppingStore(s.store)
-                      setNewShoppingCategory(s.category)
-                    }}
-                    getSubLabel={s => `${s.store ?? 'Any'} · ${SHOPPING_CATEGORY_LABELS[s.category]}`}
-                    placeholder="Add item…"
-                    inputClassName="w-full border border-stone-300 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-stone-400"
-                    onKeyDown={e => e.key === 'Enter' && addShoppingItem()}
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={addShoppingItem}
-                  disabled={addingItem || !newShoppingName.trim()}
-                  className="p-2.5 bg-stone-900 text-white rounded-xl disabled:opacity-50"
-                >
-                  <Plus size={20} />
-                </button>
-              </div>
+          <div className="p-4 border-t border-slate-200 shrink-0">
+            <div className="w-full space-y-2">
+              <SuggestionNameInput
+                value={newShoppingName}
+                onChange={setNewShoppingName}
+                suggestions={shoppingSuggestions}
+                onSelectSuggestion={s => {
+                  setNewShoppingName(s.name)
+                  if (s.store) setNewShoppingStore(s.store)
+                  setNewShoppingCategory(s.category)
+                }}
+                getSubLabel={s => `${s.store ?? 'Any'} · ${SHOPPING_CATEGORY_LABELS[s.category]}`}
+                placeholder="Add item…"
+                inputClassName="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onKeyDown={e => e.key === 'Enter' && addShoppingItem()}
+              />
               <select
                 value={newShoppingStore}
                 onChange={e => setNewShoppingStore(e.target.value as Store)}
-                className="w-full border border-stone-300 rounded-xl px-3 py-2.5 text-sm bg-white"
+                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white text-slate-800 focus:outline-none"
               >
                 {STORES.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
               <select
                 value={newShoppingCategory}
                 onChange={e => setNewShoppingCategory(e.target.value as ShoppingCategory)}
-                className="w-full border border-stone-300 rounded-xl px-3 py-2.5 text-sm bg-white"
+                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white text-slate-800 focus:outline-none"
               >
                 {CATEGORIES.map(c => (
                   <option key={c} value={c}>{SHOPPING_CATEGORY_LABELS[c]}</option>
                 ))}
               </select>
+              <button
+                type="button"
+                onClick={addShoppingItem}
+                disabled={addingItem || !newShoppingName.trim()}
+                className="w-full bg-stone-900 text-white rounded-xl py-2.5 text-sm font-semibold disabled:opacity-50"
+              >
+                Add Item
+              </button>
             </div>
           </div>
         </div>

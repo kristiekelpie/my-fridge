@@ -270,10 +270,18 @@ export default function FridgeInteriorOpen({ itemCounts, onZoneClick, activeZone
   const cabInnerW = CAB_W - 8
 
   return (
-    <div
-      className={`mx-auto ${className}`}
-      style={{ filter: 'drop-shadow(0 12px 32px rgba(0,0,0,0.1))' }}
-    >
+    <div className={`relative mx-auto pb-4 ${className}`}>
+      <div
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 z-0 -translate-x-1/2 rounded-[50%] bg-stone-900/30 blur-[18px]"
+        style={{ bottom: '-0.15rem', width: '82%', height: '1.35rem' }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 z-0 -translate-x-1/2 rounded-[50%] bg-stone-900/15 blur-[8px]"
+        style={{ bottom: '0.1rem', width: '68%', height: '0.55rem' }}
+      />
+      <div className="relative z-[1] h-full w-full">
       <svg
         viewBox="0 0 420 520"
         className="h-full w-full max-h-full max-w-full"
@@ -363,18 +371,19 @@ export default function FridgeInteriorOpen({ itemCounts, onZoneClick, activeZone
           />
           <line x1={DOOR_X + 2} y1={TOP + 20} x2={DOOR_X + 2} y2={TOP + HEIGHT - 20} stroke="#888" strokeWidth="3" strokeLinecap="round" />
 
-          {/* Freezer door — cool interior, separate from fridge door */}
-          <rect
+          {/* Freezer door — opens freezer compartment */}
+          <ClickZone
             x={DOOR_INNER_X}
             y={FREEZER_Y}
-            width={DOOR_INNER_W}
-            height={FREEZER_H}
-            rx={ZONE_RX}
-            fill="url(#freezerInterior)"
-            stroke="#D0DEE8"
-            strokeWidth="1"
+            w={DOOR_INNER_W}
+            h={FREEZER_H}
+            label="freezer door"
+            count={freezerCount}
+            active={isFreezerActive}
+            onClick={() => onZoneClick('freezer')}
+            fillIdle="url(#freezerInterior)"
+            strokeIdle="#D0DEE8"
           />
-          <ZoneLabel x={DOOR_INNER_X} y={FREEZER_Y} w={DOOR_INNER_W} h={FREEZER_H} label="freezer door" active={false} />
 
           {/* Fridge door — single zone (storage + door combined) */}
           <ClickZone
@@ -394,7 +403,9 @@ export default function FridgeInteriorOpen({ itemCounts, onZoneClick, activeZone
         </g>
 
         <ellipse cx={(CAB_X + CAB_W + DOOR_X) / 2} cy={TOP + HEIGHT + 4} rx="90" ry="4" fill="#000" opacity="0.06" />
+        <ellipse cx={(CAB_X + CAB_W + DOOR_X) / 2} cy={TOP + HEIGHT + 8} rx="102" ry="7" fill="#000" opacity="0.14" />
       </svg>
+      </div>
     </div>
   )
 }

@@ -2,20 +2,30 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/client'
-import { HouseholdItem, normalizeItem } from '@/lib/types'
+import { HouseholdItem, normalizeItem, isExpiringWithinDays, EXPIRING_SOON_DAYS } from '@/lib/types'
 import FridgeView from '@/components/fridge/FridgeView'
 import ItemForm from '@/components/items/ItemForm'
+import HistoryView from '@/components/history/HistoryView'
+import ItemListByCategory from '@/components/fridge/ItemListByCategory'
 import Sidebar from '@/components/sidebar/Sidebar'
 import { Plus, Menu } from 'lucide-react'
+
+type FullPageView = 'history' | 'inventory' | 'expiring'
 
 export default function HomePage() {
   const supabase = createClient()
   const [items, setItems] = useState<HouseholdItem[]>([])
   const [showForm, setShowForm] = useState(false)
   const [editItem, setEditItem] = useState<HouseholdItem | null>(null)
+  const [formPrefill, setFormPrefill] = useState<Partial<HouseholdItem> | undefined>()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [fullPageView, setFullPageView] = useState<FullPageView | null>(null)
   const [loading, setLoading] = useState(true)
   const [fetchError, setFetchError] = useState<string | null>(null)
+
+  const totalItems = items.length
+  const expiringItems = items.filter(i => isExpiringWithinDays(i.expiry_date, EXPIRING_SOON_DAYS))
+  const expiringCount = expiringItems.length
 
   const fetchItems = useCallback(async () => {
     if (!isSupabaseConfigured()) {
@@ -85,6 +95,19 @@ export default function HomePage() {
   function handleFormClose() {
     setShowForm(false)
     setEditItem(null)
+    setFormPrefill(undefined)
+  }
+
+  function handleAddHistoryToFridge(item: Partial<HouseholdItem>) {
+    setFullPageView(null)
+    setEditItem(null)
+    setFormPrefill(item)
+    setShowForm(true)
+  }
+
+  function openFullPageView(view: FullPageView) {
+    setSidebarOpen(false)
+    setFullPageView(view)
   }
 
   return (
@@ -120,8 +143,37 @@ export default function HomePage() {
               Loading…
             </div>
           </div>
+        ) : fullPageView === 'history' ? (
+          <HistoryView
+            onBack={() => setFullPageView(null)}
+            onAddToFridge={handleAddHistoryToFridge}
+          />
+        ) : fullPageView === 'inventory' ? (
+          <ItemListByCategory
+            title="Inventory"
+            subtitle={`${totalItems} item${totalItems !== 1 ? 's' : ''} — grouped by category`}
+            items={items}
+            onBack={() => setFullPageView(null)}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
+        ) : fullPageView === 'expiring' ? (
+          <ItemListByCategory
+            title="Expiring Soon"
+            subtitle={`${expiringCount} item${expiringCount !== 1 ? 's' : ''} — grouped by category`}
+            items={expiringItems}
+            onBack={() => setFullPageView(null)}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
         ) : (
-          <FridgeView items={items} onEdit={handleEdit} onDelete={handleDelete} />
+          <FridgeView
+            items={items}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onOpenInventory={() => setFullPageView('inventory')}
+            onOpenExpiring={() => setFullPageView('expiring')}
+          />
         )}
       </main>
 
@@ -142,14 +194,23 @@ export default function HomePage() {
       {/* Item form modal */}
       {showForm && (
         <ItemForm
-          initialItem={editItem ?? undefined}
+          key={editItem?.id ?? `prefill-${formPrefill?.name ?? 'new'}`}
+          initialItem={editItem ?? formPrefill}
           onSave={() => { handleFormClose(); fetchItems() }}
           onClose={handleFormClose}
         />
       )}
 
       {/* Sidebar */}
-      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        itemCount={totalItems}
+        expiringCount={expiringCount}
+        onOpenInventory={() => openFullPageView('inventory')}
+        onOpenExpiring={() => openFullPageView('expiring')}
+        onOpenHistory={() => openFullPageView('history')}
+      />
     </div>
   )
 }

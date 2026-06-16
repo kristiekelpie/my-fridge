@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/client'
 import { HouseholdItem, Category, Location, CATEGORY_LABELS, LOCATION_LABELS, CATEGORIES, normalizeCategory } from '@/lib/types'
 import { fetchFridgeSuggestions, upsertFridgeSuggestion, type FridgeItemSuggestion } from '@/lib/suggestions'
+import { fileToResizedDataUrl, dataUrlToBlob } from '@/lib/doorPhotos'
 import SuggestionNameInput from '@/components/items/SuggestionNameInput'
 import { Camera, Image as ImageIcon, Loader2, ChevronLeft } from 'lucide-react'
 
@@ -15,6 +16,9 @@ interface Props {
 }
 
 const LOCATIONS: Location[] = ['freezer', 'shelf1', 'shelf2', 'upper_drawer', 'shelf3', 'lower_drawer', 'door']
+
+const FORM_FIELD =
+  'form-field border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500'
 
 export default function ItemForm({ initialItem, defaultLocation, onSave, onClose }: Props) {
   const supabase = createClient()
@@ -54,9 +58,12 @@ export default function ItemForm({ initialItem, defaultLocation, onSave, onClose
     setUploading(true)
     setError(null)
     try {
-      const ext = file.name.split('.').pop() ?? 'jpg'
-      const path = `items/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-      const { error: uploadError } = await supabase.storage.from('item-photos').upload(path, file)
+      const dataUrl = await fileToResizedDataUrl(file)
+      const blob = await dataUrlToBlob(dataUrl)
+      const path = `items/${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`
+      const { error: uploadError } = await supabase.storage
+        .from('item-photos')
+        .upload(path, blob, { contentType: 'image/jpeg' })
       if (uploadError) throw uploadError
       const { data } = supabase.storage.from('item-photos').getPublicUrl(path)
       setPhotoUrl(data.publicUrl)
@@ -130,7 +137,7 @@ export default function ItemForm({ initialItem, defaultLocation, onSave, onClose
         <div className="w-[72px]" aria-hidden />
       </div>
 
-      <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 space-y-4">
+      <form id="item-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4 min-w-0">
         {/* Photo */}
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">Photo</label>
@@ -174,7 +181,7 @@ export default function ItemForm({ initialItem, defaultLocation, onSave, onClose
         </div>
 
         {/* Name */}
-        <div>
+        <div className="min-w-0">
           <label className="block text-sm font-medium text-slate-700 mb-1">Name *</label>
           <SuggestionNameInput
             value={name}
@@ -185,20 +192,21 @@ export default function ItemForm({ initialItem, defaultLocation, onSave, onClose
               setCategory(s.category)
               setLocation(s.location)
               setNotes(s.notes ?? '')
+              if (s.photo_url) setPhotoUrl(s.photo_url)
             }}
             getSubLabel={s => `${CATEGORY_LABELS[s.category]} · ${LOCATION_LABELS[s.location]}`}
             placeholder="e.g. Chicken thighs"
-            inputClassName="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
+            inputClassName={`w-full min-w-0 ${FORM_FIELD}`}
           />
         </div>
 
         {/* Category */}
-        <div>
+        <div className="min-w-0">
           <label className="block text-sm font-medium text-slate-700 mb-1">Category *</label>
           <select
             value={category}
             onChange={e => setCategory(e.target.value as Category)}
-            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base bg-white"
+            className={FORM_FIELD}
           >
             {CATEGORIES.map(c => (
               <option key={c} value={c}>{CATEGORY_LABELS[c]}</option>
@@ -207,24 +215,24 @@ export default function ItemForm({ initialItem, defaultLocation, onSave, onClose
         </div>
 
         {/* Expiry Date */}
-        <div>
+        <div className="min-w-0">
           <label className="block text-sm font-medium text-slate-700 mb-1">Expiry Date *</label>
           <input
             type="date"
             value={expiryDate}
             onChange={e => setExpiryDate(e.target.value)}
             required
-            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
+            className={FORM_FIELD}
           />
         </div>
 
         {/* Location */}
-        <div>
+        <div className="min-w-0">
           <label className="block text-sm font-medium text-slate-700 mb-1">Location *</label>
           <select
             value={location}
             onChange={e => setLocation(e.target.value as Location)}
-            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base bg-white"
+            className={FORM_FIELD}
           >
             {LOCATIONS.map(l => (
               <option key={l} value={l}>{LOCATION_LABELS[l]}</option>
@@ -233,14 +241,14 @@ export default function ItemForm({ initialItem, defaultLocation, onSave, onClose
         </div>
 
         {/* Notes */}
-        <div>
+        <div className="min-w-0">
           <label className="block text-sm font-medium text-slate-700 mb-1">Notes <span className="text-slate-400 font-normal">(optional)</span></label>
           <textarea
             value={notes}
             onChange={e => setNotes(e.target.value)}
             placeholder="Any notes…"
             rows={3}
-            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base resize-none"
+            className={`${FORM_FIELD} resize-none`}
           />
         </div>
 
@@ -249,13 +257,12 @@ export default function ItemForm({ initialItem, defaultLocation, onSave, onClose
         )}
       </form>
 
-      {/* Footer */}
-      <div className="p-4 border-t border-stone-400/40">
+      <div className="p-4 border-t border-slate-200 shrink-0">
         <button
           type="submit"
-          onClick={handleSubmit}
+          form="item-form"
           disabled={saving || uploading || !name.trim() || !expiryDate}
-          className="w-full bg-stone-900 text-stone-50 rounded-md py-3.5 font-mono text-sm font-bold uppercase tracking-[0.2em] disabled:opacity-40 active:bg-stone-700 transition-colors"
+          className="w-full appearance-none border-0 bg-stone-900 text-white rounded-xl py-2.5 text-sm font-semibold disabled:opacity-50 active:bg-stone-800 transition-colors"
         >
           {saving ? 'Saving…' : isEdit ? 'Save changes' : 'Add to fridge'}
         </button>

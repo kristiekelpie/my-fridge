@@ -15,6 +15,9 @@ export type Store = 'Costco' | 'Walmart' | 'Albertsons' | 'Any' | 'Other'
 export type ShoppingCategory = 'food' | 'household' | 'personal'
 export type ExpiryStatus = 'fresh' | 'soon' | 'urgent' | 'expired'
 
+/** Items on the Expiring Soon page and stamp when expiry is within this many days (inclusive). */
+export const EXPIRING_SOON_DAYS = 3
+
 export interface HouseholdItem {
   id: string
   created_at: string
@@ -123,15 +126,20 @@ export function normalizeItem(item: HouseholdItem): HouseholdItem {
   return { ...item, category: normalizeCategory(item.category) }
 }
 
+function parseLocalDate(dateStr: string): Date {
+  const [y, m, d] = dateStr.split('T')[0].split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
+
 export function daysUntilExpiry(expiryDate: string): number {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-  const expiry = new Date(expiryDate)
+  const expiry = parseLocalDate(expiryDate)
   expiry.setHours(0, 0, 0, 0)
-  return Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+  return Math.round((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
 }
 
-export function isExpiringWithinDays(expiryDate: string, days: number = 3): boolean {
+export function isExpiringWithinDays(expiryDate: string, days: number = EXPIRING_SOON_DAYS): boolean {
   return daysUntilExpiry(expiryDate) <= days
 }
 
@@ -140,7 +148,7 @@ export function getExpiryStatus(expiryDate: string): ExpiryStatus {
 
   if (diffDays < 0) return 'expired'
   if (diffDays <= 2) return 'urgent'
-  if (diffDays <= 4) return 'soon'
+  if (diffDays <= EXPIRING_SOON_DAYS) return 'soon'
   return 'fresh'
 }
 

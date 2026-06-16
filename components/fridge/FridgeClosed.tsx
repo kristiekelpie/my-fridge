@@ -7,6 +7,7 @@ import type { MealNote, ShoppingItem } from '@/lib/types'
 
 interface Props {
   onOpen: () => void
+  onOpenFreezer: () => void
   onOpenNotes: () => void
   notes: MealNote[]
   shopping: ShoppingItem[]
@@ -17,8 +18,81 @@ interface Props {
   className?: string
 }
 
+/** Gloss on freezer + fridge doors only — skips silver handle band */
+function FridgeFrontSheen() {
+  const panel = { left: '6.4%', width: '87.3%' as const }
+
+  return (
+    <>
+      <div
+        className="absolute z-[5] pointer-events-none overflow-hidden"
+        style={{ ...panel, top: '1.9%', height: '27.7%', borderRadius: '10px' }}
+        aria-hidden
+      >
+        <SheenLayers />
+      </div>
+      <div
+        className="absolute z-[5] pointer-events-none overflow-hidden"
+        style={{ ...panel, top: '33.1%', height: '60.8%', borderRadius: '10px' }}
+        aria-hidden
+      >
+        <SheenLayers />
+      </div>
+    </>
+  )
+}
+
+function SheenLayers() {
+  return (
+    <>
+      <div
+        className="absolute inset-0"
+        style={{
+          background: `linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.06) 0%,
+            transparent 38%,
+            rgba(255, 255, 255, 0.22) 54%,
+            rgba(255, 255, 255, 0.75) 66%,
+            rgba(255, 255, 255, 0.95) 70%,
+            rgba(255, 255, 255, 0.75) 74%,
+            rgba(255, 255, 255, 0.22) 82%,
+            transparent 92%
+          )`,
+        }}
+      />
+      <div
+        className="absolute inset-0"
+        style={{
+          background: `linear-gradient(
+            90deg,
+            transparent 80%,
+            rgba(255, 255, 255, 0.35) 88%,
+            rgba(255, 255, 255, 0.55) 93%,
+            rgba(255, 255, 255, 0.2) 97%,
+            transparent 100%
+          )`,
+        }}
+      />
+      <div
+        className="absolute inset-0"
+        style={{
+          background: `linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.18) 0%,
+            transparent 18%,
+            transparent 82%,
+            rgba(0, 0, 0, 0.03) 100%
+          )`,
+        }}
+      />
+    </>
+  )
+}
+
 export default function FridgeClosed({
   onOpen,
+  onOpenFreezer,
   onOpenNotes,
   notes,
   shopping,
@@ -29,10 +103,18 @@ export default function FridgeClosed({
   className = '',
 }: Props) {
   return (
-    <div
-      className={`relative mx-auto block w-fit max-w-full ${className}`}
-      style={{ filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.08))' }}
-    >
+    <div className={`relative mx-auto block w-fit max-w-full pb-4 ${className}`}>
+      <div
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 z-0 -translate-x-1/2 rounded-[50%] bg-stone-900/30 blur-[18px]"
+        style={{ bottom: '-0.15rem', width: '82%', height: '1.35rem' }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 z-0 -translate-x-1/2 rounded-[50%] bg-stone-900/15 blur-[8px]"
+        style={{ bottom: '0.1rem', width: '68%', height: '0.55rem' }}
+      />
+      <div className="relative z-[1] h-full w-full">
       <svg
         viewBox="0 0 220 520"
         className="h-full w-auto max-w-[96vw] mx-auto pointer-events-none"
@@ -51,17 +133,34 @@ export default function FridgeClosed({
             <stop offset="100%" stopColor="#F6F6F4" />
           </linearGradient>
           <linearGradient id="doorSheen" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="52%" stopColor="#FFFFFF" stopOpacity="0" />
-            <stop offset="64%" stopColor="#FFFFFF" stopOpacity="0.18" />
-            <stop offset="70%" stopColor="#FFFFFF" stopOpacity="0.55" />
-            <stop offset="76%" stopColor="#FFFFFF" stopOpacity="0.18" />
-            <stop offset="88%" stopColor="#FFFFFF" stopOpacity="0" />
+            <stop offset="38%" stopColor="#FFFFFF" stopOpacity="0" />
+            <stop offset="54%" stopColor="#FFFFFF" stopOpacity="0.25" />
+            <stop offset="66%" stopColor="#FFFFFF" stopOpacity="0.75" />
+            <stop offset="70%" stopColor="#FFFFFF" stopOpacity="0.95" />
+            <stop offset="74%" stopColor="#FFFFFF" stopOpacity="0.75" />
+            <stop offset="82%" stopColor="#FFFFFF" stopOpacity="0.25" />
+            <stop offset="92%" stopColor="#FFFFFF" stopOpacity="0" />
           </linearGradient>
           <linearGradient id="edgeSheen" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="86%" stopColor="#FFFFFF" stopOpacity="0" />
-            <stop offset="92%" stopColor="#FFFFFF" stopOpacity="0.22" />
-            <stop offset="96%" stopColor="#FFFFFF" stopOpacity="0.08" />
+            <stop offset="80%" stopColor="#FFFFFF" stopOpacity="0" />
+            <stop offset="88%" stopColor="#FFFFFF" stopOpacity="0.35" />
+            <stop offset="93%" stopColor="#FFFFFF" stopOpacity="0.55" />
+            <stop offset="97%" stopColor="#FFFFFF" stopOpacity="0.2" />
             <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+          </linearGradient>
+          <linearGradient id="frontShade" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#000000" stopOpacity="0.04" />
+            <stop offset="35%" stopColor="#000000" stopOpacity="0" />
+            <stop offset="100%" stopColor="#000000" stopOpacity="0" />
+          </linearGradient>
+          <linearGradient id="handleSilver" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#E4E4E8" />
+            <stop offset="45%" stopColor="#B8B8BE" />
+            <stop offset="100%" stopColor="#D0D0D6" />
+          </linearGradient>
+          <linearGradient id="handleBar" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#A8A8AE" />
+            <stop offset="100%" stopColor="#888890" />
           </linearGradient>
         </defs>
 
@@ -71,26 +170,29 @@ export default function FridgeClosed({
 
         {/* Freezer door — ~30% */}
         <rect x="14" y="10" width="192" height="144" rx="10" fill="url(#doorFace)" stroke="#D4D4D4" strokeWidth="1" />
-        <rect x="14" y="10" width="192" height="144" rx="10" fill="url(#doorSheen)" />
-        <rect x="14" y="10" width="192" height="144" rx="10" fill="url(#edgeSheen)" />
 
-        {/* Door seam */}
-        <rect x="14" y="154" width="192" height="1" fill="#D6D6D4" />
-        <rect x="14" y="155" width="192" height="1" fill="#F0F0EE" />
-
-        {/* Recessed handle pocket between doors */}
-        <rect x="14" y="156" width="192" height="14" rx="2" fill="#EBEBE9" stroke="#D8D8D6" strokeWidth="0.5" />
-        <rect x="72" y="158" width="76" height="3.5" rx="1" fill="#D0D0CE" />
-        <rect x="74" y="159" width="72" height="1.5" rx="0.5" fill="#C4C4C2" />
-        <rect x="72" y="163" width="76" height="3.5" rx="1" fill="#D0D0CE" />
-        <rect x="74" y="164" width="72" height="1.5" rx="0.5" fill="#C4C4C2" />
-
-        <rect x="14" y="170" width="192" height="1" fill="#D6D6D4" />
+        {/* Seam above handle */}
+        <rect x="14" y="154" width="192" height="1" fill="#B0B0B6" />
+        <rect x="14" y="155" width="192" height="1" fill="#D8D8DE" />
 
         {/* Fridge door — ~70% */}
         <rect x="14" y="172" width="192" height="316" rx="10" fill="url(#doorFace)" stroke="#D4D4D4" strokeWidth="1" />
+
+        {/* Sheen on freezer + fridge doors only (not handle band) */}
+        <rect x="14" y="10" width="192" height="144" rx="10" fill="url(#doorSheen)" />
+        <rect x="14" y="10" width="192" height="144" rx="10" fill="url(#edgeSheen)" />
+        <rect x="14" y="10" width="192" height="144" rx="10" fill="url(#frontShade)" />
         <rect x="14" y="172" width="192" height="316" rx="10" fill="url(#doorSheen)" />
         <rect x="14" y="172" width="192" height="316" rx="10" fill="url(#edgeSheen)" />
+        <rect x="14" y="172" width="192" height="316" rx="10" fill="url(#frontShade)" />
+
+        {/* Silver handle band — on top of sheen */}
+        <rect x="14" y="156" width="192" height="14" rx="2" fill="url(#handleSilver)" stroke="#9A9AA0" strokeWidth="0.5" />
+        <rect x="72" y="158" width="76" height="3.5" rx="1" fill="url(#handleBar)" />
+        <rect x="74" y="159" width="72" height="1.5" rx="0.5" fill="#787880" />
+        <rect x="72" y="163" width="76" height="3.5" rx="1" fill="url(#handleBar)" />
+        <rect x="74" y="164" width="72" height="1.5" rx="0.5" fill="#787880" />
+        <rect x="14" y="170" width="192" height="1" fill="#C8C8CE" />
 
         {/* Kickplate grille */}
         <rect x="14" y="490" width="192" height="18" rx="3" fill="#F0F0EE" stroke="#D8D8D6" strokeWidth="0.5" />
@@ -101,7 +203,12 @@ export default function FridgeClosed({
         {/* Leveling feet */}
         <rect x="22" y="508" width="8" height="3" rx="0.5" fill="#222" />
         <rect x="190" y="508" width="8" height="3" rx="0.5" fill="#222" />
+
+        {/* Ground shadow */}
+        <ellipse cx="110" cy="517" rx="92" ry="7" fill="#000" opacity="0.14" />
       </svg>
+
+      <FridgeFrontSheen />
 
       {/* Freezer door exterior */}
       <div
@@ -110,18 +217,22 @@ export default function FridgeClosed({
       >
         <button
           type="button"
-          onClick={onOpen}
+          onClick={onOpenFreezer}
           className="absolute inset-0 z-0 cursor-pointer rounded-lg"
-          aria-label="Open fridge"
+          aria-label="View freezer items"
         />
         <DoorPolaroid
           slot="upper"
           photoUrl={upperPhotoUrl}
           onUpload={onUploadPolaroid}
           magnetCorner="top-quarter"
+          className="!z-10"
           style={{ top: '22%', left: '50%', transform: 'translateX(-50%) rotate(-3deg)' }}
         />
-        <MagneticPhrase letters={HELLO_CHEF_LETTERS} className="translate-x-[5px] translate-y-[20px]" />
+        <MagneticPhrase
+          letters={HELLO_CHEF_LETTERS}
+          className="translate-x-[5px] translate-y-[20px] !z-[25]"
+        />
       </div>
 
       {/* Handle tap → open */}
@@ -168,11 +279,13 @@ export default function FridgeClosed({
           slot="lower"
           photoUrl={lowerPhotoUrl}
           onUpload={onUploadPolaroid}
-          magnetCorner="top-right"
+          magnetCorner="top-center"
+          className="!z-10"
           style={{ top: '52%', left: '50%', transform: 'translateX(-50%) rotate(4deg)' }}
         />
-        <MagneticPhrase letters={I_LOVE_YOU_LETTERS} className="hidden sm:block" />
-        <MagneticPhrase letters={I_LOVE_YOU_LETTERS_MOBILE} className="sm:hidden" />
+        <MagneticPhrase letters={I_LOVE_YOU_LETTERS} className="hidden sm:block !z-[25]" />
+        <MagneticPhrase letters={I_LOVE_YOU_LETTERS_MOBILE} className="sm:hidden !z-[25]" />
+      </div>
       </div>
     </div>
   )

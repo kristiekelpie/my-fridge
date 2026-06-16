@@ -68,7 +68,7 @@ function MagnetLetter({ char, color, rotate, scale = 1 }: {
 export function MagneticPhrase({ letters, className = '' }: { letters: LetterPlacement[]; className?: string }) {
   return (
     <div
-      className={`absolute inset-0 pointer-events-none z-[25] ${className}`}
+      className={`absolute inset-0 pointer-events-none z-[15] ${className}`}
       style={{ fontSize: 'clamp(14px, 3.2vw, 22px)' }}
     >
       {letters.map((letter, i) => (

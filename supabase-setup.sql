@@ -43,6 +43,7 @@ create table if not exists fridge_item_suggestions (
   category text not null check (category in ('protein', 'vegetables', 'dairy', 'sauces', 'starch', 'cooked_food', 'fruits', 'condiments', 'drinks', 'other')),
   location text not null check (location in ('freezer', 'shelf1', 'shelf2', 'upper_drawer', 'shelf3', 'lower_drawer', 'door')),
   notes text,
+  photo_url text,
   use_count int not null default 1,
   last_used_at timestamptz default now() not null,
   created_at timestamptz default now() not null

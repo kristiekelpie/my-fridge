@@ -30,36 +30,42 @@ export default function ItemCard({ item, onEdit, onDelete }: Props) {
   return (
     <div
       className="card-flip"
-      style={{ height: '170px' }}
+      style={{ height: '120px' }}
       onClick={() => setFlipped(f => !f)}
     >
-      <div className={`card-flip-inner ${flipped ? 'flipped' : ''}`} style={{ height: '170px' }}>
+      <div className={`card-flip-inner ${flipped ? 'flipped' : ''}`} style={{ height: '120px' }}>
         {/* Front face */}
-        <div className="card-face rounded-md overflow-hidden bg-white border-2 border-stone-900/90 shadow-sm">
+        <div className="card-face rounded-md overflow-hidden bg-white border border-stone-900/90 shadow-sm">
           {item.photo_url ? (
-            <img
-              src={item.photo_url}
-              alt={item.name}
-              className="w-full h-full object-cover"
-            />
+            <>
+              <img
+                src={item.photo_url}
+                alt={item.name}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-stone-900/85 via-stone-900/45 to-transparent pt-5 pb-1 px-1.5">
+                <span className="font-mono text-[8px] text-white font-bold uppercase tracking-wider line-clamp-2 leading-tight">
+                  {item.name}
+                </span>
+              </div>
+            </>
           ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center bg-stone-50 gap-2">
-              <span className="text-4xl">{CATEGORY_EMOJI[category]}</span>
-              <span className="font-mono text-[10px] text-stone-600 font-bold uppercase tracking-wider px-2 text-center line-clamp-2">
+            <div className="w-full h-full flex flex-col items-center justify-center bg-stone-50 gap-1.5 px-1.5">
+              <span className="font-mono text-[8px] text-stone-600 font-bold uppercase tracking-wider text-center line-clamp-4 leading-tight">
                 {item.name}
               </span>
             </div>
           )}
           {/* Expiry stamp overlay */}
-          <div className="absolute top-1.5 left-1.5" style={{ transform: 'rotate(-4deg)' }}>
-            <span className={`font-mono text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-sm border ${statusCfg.bg} ${statusCfg.text} ${statusCfg.border}`}>
+          <div className="absolute top-1 left-1" style={{ transform: 'rotate(-4deg)' }}>
+            <span className={`font-mono text-[7px] font-bold uppercase tracking-wider px-1 py-0.5 rounded-sm border ${statusCfg.bg} ${statusCfg.text} ${statusCfg.border}`}>
               {expiryLabel}
             </span>
           </div>
         </div>
 
         {/* Back face */}
-        <div className="card-face card-back rounded-md bg-stone-50 border-2 border-stone-900/90 shadow-sm p-2.5 flex flex-col justify-between">
+        <div className="card-face card-back rounded-md bg-stone-50 border border-stone-900/90 shadow-sm p-2.5 flex flex-col justify-between">
           <div>
             <div className="flex items-start justify-between gap-1 mb-1">
               <h3 className="font-mono text-[11px] font-bold uppercase tracking-wide text-stone-900 leading-tight line-clamp-2">

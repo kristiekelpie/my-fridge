@@ -50,7 +50,7 @@ export default function DoorNotesPaper({ onClick, notes, shopping, className = '
           <HeartMagnet />
         </div>
         <div
-          className="w-[6rem] sm:w-[6.75rem] h-[9.5rem] sm:h-[10rem] bg-white shadow-[2px_4px_10px_rgba(0,0,0,0.15)] pt-4 px-1.5 pb-1.5 overflow-hidden"
+          className="w-[6rem] sm:w-[6.75rem] h-[calc(9.5rem-12px)] sm:h-[calc(10rem-12px)] bg-white shadow-[2px_4px_10px_rgba(0,0,0,0.15)] pt-4 px-1.5 pb-1.5 overflow-hidden"
           style={{
             backgroundImage: `repeating-linear-gradient(
               transparent,

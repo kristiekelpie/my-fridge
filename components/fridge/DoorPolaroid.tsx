@@ -10,7 +10,7 @@ interface Props {
   slot: PolaroidSlot
   photoUrl: string | null
   onUpload: (slot: PolaroidSlot, file: File) => Promise<void>
-  magnetCorner?: 'top-left' | 'top-right' | 'top-quarter'
+  magnetCorner?: 'top-left' | 'top-right' | 'top-quarter' | 'top-center'
   className?: string
   style?: React.CSSProperties
 }
@@ -47,7 +47,9 @@ export default function DoorPolaroid({
       ? 'absolute -top-1.5 -left-1.5 z-30 pointer-events-none'
       : magnetCorner === 'top-quarter'
         ? 'absolute -top-1.5 left-1/4 -translate-x-1/2 z-30 pointer-events-none'
-        : 'absolute -top-1.5 -right-1.5 z-30 pointer-events-none'
+        : magnetCorner === 'top-center'
+          ? 'absolute -top-1.5 left-1/2 -translate-x-1/2 z-30 pointer-events-none'
+          : 'absolute -top-1.5 -right-1.5 z-30 pointer-events-none'
 
   return (
     <>
@@ -64,7 +66,7 @@ export default function DoorPolaroid({
           e.stopPropagation()
           fileRef.current?.click()
         }}
-        className={`absolute z-20 active:scale-[0.98] transition-transform ${className}`}
+        className={`absolute active:scale-[0.98] transition-transform z-20 ${className}`}
         style={style}
         aria-label={`${slot} polaroid — tap to change photo`}
       >

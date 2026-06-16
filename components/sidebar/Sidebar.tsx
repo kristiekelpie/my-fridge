@@ -4,9 +4,9 @@ import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { MealNote, ShoppingItem, Store, ShoppingCategory, SHOPPING_CATEGORY_LABELS } from '@/lib/types'
 import { toggleShoppingItemChecked } from '@/lib/shoppingActions'
-import { fetchShoppingSuggestions, upsertShoppingSuggestion, type ShoppingSuggestion } from '@/lib/suggestions'
+import { fetchShoppingSuggestions, fetchFridgeSuggestions, upsertShoppingSuggestion, type ShoppingSuggestion } from '@/lib/suggestions'
 import SuggestionNameInput from '@/components/items/SuggestionNameInput'
-import { X, Plus, Trash2, ChevronRight } from 'lucide-react'
+import { X, Trash2, ChevronRight } from 'lucide-react'
 
 const STORES: Store[] = ['Costco', 'Walmart', 'Albertsons', 'Any', 'Other']
 const CATEGORIES: ShoppingCategory[] = ['food', 'household', 'personal']
@@ -14,15 +14,29 @@ const CATEGORIES: ShoppingCategory[] = ['food', 'household', 'personal']
 interface Props {
   open: boolean
   onClose: () => void
+  itemCount: number
+  expiringCount: number
+  onOpenInventory: () => void
+  onOpenExpiring: () => void
+  onOpenHistory: () => void
 }
 
 type Panel = 'main' | 'notes' | 'shopping'
 
-export default function Sidebar({ open, onClose }: Props) {
+export default function Sidebar({
+  open,
+  onClose,
+  itemCount,
+  expiringCount,
+  onOpenInventory,
+  onOpenExpiring,
+  onOpenHistory,
+}: Props) {
   const supabase = createClient()
   const [panel, setPanel] = useState<Panel>('main')
   const [notes, setNotes] = useState<MealNote[]>([])
   const [shopping, setShopping] = useState<ShoppingItem[]>([])
+  const [historyCount, setHistoryCount] = useState(0)
   const [newNoteTitle, setNewNoteTitle] = useState('')
   const [newNoteContent, setNewNoteContent] = useState('')
   const [newShoppingName, setNewShoppingName] = useState('')
@@ -53,11 +67,17 @@ export default function Sidebar({ open, onClose }: Props) {
     setShoppingSuggestions(data)
   }, [supabase])
 
+  const fetchHistoryCount = useCallback(async () => {
+    const data = await fetchFridgeSuggestions(supabase)
+    setHistoryCount(data.length)
+  }, [supabase])
+
   useEffect(() => {
     if (!open) return
     fetchNotes()
     fetchShopping()
     fetchShoppingSuggestionsList()
+    fetchHistoryCount()
 
     const notesSub = supabase
       .channel('sidebar-notes')
@@ -69,11 +89,17 @@ export default function Sidebar({ open, onClose }: Props) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'shopping_items' }, fetchShopping)
       .subscribe()
 
+    const historySub = supabase
+      .channel('sidebar-history-count')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'fridge_item_suggestions' }, fetchHistoryCount)
+      .subscribe()
+
     return () => {
       supabase.removeChannel(notesSub)
       supabase.removeChannel(shoppingSub)
+      supabase.removeChannel(historySub)
     }
-  }, [open, fetchNotes, fetchShopping, fetchShoppingSuggestionsList, supabase])
+  }, [open, fetchNotes, fetchShopping, fetchShoppingSuggestionsList, fetchHistoryCount, supabase])
 
   async function addNote() {
     if (!newNoteTitle.trim() || !newNoteContent.trim()) return
@@ -134,6 +160,15 @@ export default function Sidebar({ open, onClose }: Props) {
     return acc
   }, {} as Partial<Record<Store, ShoppingItem[]>>)
 
+  const panelTitle =
+    panel === 'main' ? 'Kitchen Log'
+    : panel === 'notes' ? 'Meal Notes'
+    : 'Shopping List'
+
+  function openHistory() {
+    onOpenHistory()
+  }
+
   return (
     <>
       {/* Backdrop */}
@@ -158,15 +193,16 @@ export default function Sidebar({ open, onClose }: Props) {
             </button>
           )}
           <div className="flex-1 pl-1">
-            <p className="font-mono text-[9px] tracking-[0.25em] uppercase text-stone-500">Our Log</p>
-            <h2 className="font-mono text-base font-bold tracking-tight text-stone-900 mt-0.5">
-              <span className="editorial-underline">
-                {panel === 'main' ? 'Menu' : panel === 'notes' ? 'Meal Notes' : 'Shopping List'}
-              </span>
+            <h2 className="font-mono text-base font-bold tracking-tight text-stone-900">
+              <span className="editorial-underline">{panelTitle}</span>
             </h2>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-md active:bg-stone-200 border border-stone-300">
-            <X size={18} className="text-stone-700" />
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-md bg-stone-900 active:bg-stone-800 border border-stone-900"
+            aria-label="Close menu"
+          >
+            <X size={18} className="text-white" strokeWidth={2.5} />
           </button>
         </div>
 
@@ -175,22 +211,61 @@ export default function Sidebar({ open, onClose }: Props) {
           <div className="flex-1 p-4 space-y-2">
             <button
               onClick={() => setPanel('notes')}
-              className="w-full flex items-center justify-between px-4 py-4 bg-orange-50 rounded-2xl active:bg-orange-100 text-left"
+              className="w-full flex items-center justify-between px-4 py-4 bg-stone-50 border border-stone-900/90 shadow-sm rounded-xl active:bg-stone-100 text-left"
             >
               <div>
-                <div className="text-sm font-semibold text-slate-800">📝 Meal Notes</div>
-                <div className="text-xs text-slate-500 mt-0.5">{notes.length} note{notes.length !== 1 ? 's' : ''}</div>
+                <div className="font-mono text-sm font-semibold text-slate-800">Meal Notes</div>
+                <div className="font-mono text-xs text-slate-500 mt-0.5">{notes.length} note{notes.length !== 1 ? 's' : ''}</div>
               </div>
               <ChevronRight size={18} className="text-slate-400" />
             </button>
             <button
               onClick={() => setPanel('shopping')}
-              className="w-full flex items-center justify-between px-4 py-4 bg-green-50 rounded-2xl active:bg-green-100 text-left"
+              className="w-full flex items-center justify-between px-4 py-4 bg-stone-50 border border-stone-900/90 shadow-sm rounded-xl active:bg-stone-100 text-left"
             >
               <div>
-                <div className="text-sm font-semibold text-slate-800">🛒 Shopping List</div>
-                <div className="text-xs text-slate-500 mt-0.5">
+                <div className="font-mono text-sm font-semibold text-slate-800">Shopping List</div>
+                <div className="font-mono text-xs text-slate-500 mt-0.5">
                   {shopping.filter(i => !i.checked).length} remaining
+                </div>
+              </div>
+              <ChevronRight size={18} className="text-slate-400" />
+            </button>
+            <button
+              type="button"
+              onClick={onOpenInventory}
+              className="w-full flex items-center justify-between px-4 py-4 bg-stone-50 border border-stone-900/90 shadow-sm rounded-xl active:bg-stone-100 text-left"
+            >
+              <div>
+                <div className="font-mono text-sm font-semibold text-slate-800">Inventory</div>
+                <div className="font-mono text-xs text-slate-500 mt-0.5">
+                  {itemCount} item{itemCount !== 1 ? 's' : ''}
+                </div>
+              </div>
+              <ChevronRight size={18} className="text-slate-400" />
+            </button>
+            <button
+              type="button"
+              onClick={onOpenExpiring}
+              className="w-full flex items-center justify-between px-4 py-4 bg-stone-50 border border-stone-900/90 shadow-sm rounded-xl active:bg-stone-100 text-left"
+            >
+              <div>
+                <div className="font-mono text-sm font-semibold text-slate-800">Expiring Soon</div>
+                <div className="font-mono text-xs text-slate-500 mt-0.5">
+                  {expiringCount} item{expiringCount !== 1 ? 's' : ''}
+                </div>
+              </div>
+              <ChevronRight size={18} className="text-slate-400" />
+            </button>
+            <button
+              type="button"
+              onClick={openHistory}
+              className="w-full flex items-center justify-between px-4 py-4 bg-stone-50 border border-stone-900/90 shadow-sm rounded-xl active:bg-stone-100 text-left"
+            >
+              <div>
+                <div className="font-mono text-sm font-semibold text-slate-800">History</div>
+                <div className="font-mono text-xs text-slate-500 mt-0.5">
+                  {historyCount} item{historyCount !== 1 ? 's' : ''}
                 </div>
               </div>
               <ChevronRight size={18} className="text-slate-400" />
@@ -203,10 +278,10 @@ export default function Sidebar({ open, onClose }: Props) {
           <div className="flex-1 flex flex-col min-h-0">
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {notes.length === 0 && (
-                <p className="text-slate-400 text-sm text-center py-8">No meal notes yet</p>
+                <p className="font-mono text-sm text-slate-400 text-center py-8 tracking-tight">No meal notes yet</p>
               )}
               {notes.map(note => (
-                <div key={note.id} className="bg-orange-50 rounded-2xl p-3 relative">
+                <div key={note.id} className="bg-stone-50 border border-stone-900/90 shadow-sm rounded-xl p-3 relative">
                   <button
                     type="button"
                     onClick={() => deleteNote(note.id)}
@@ -222,26 +297,26 @@ export default function Sidebar({ open, onClose }: Props) {
                 </div>
               ))}
             </div>
-            <div className="p-4 border-t border-slate-200 shrink-0 flex justify-center">
-              <div className="w-full max-w-xs space-y-2">
+            <div className="p-4 border-t border-slate-200 shrink-0">
+              <div className="w-full space-y-2">
               <input
                 type="text"
                 value={newNoteTitle}
                 onChange={e => setNewNoteTitle(e.target.value)}
                 placeholder="Title"
-                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <textarea
                 value={newNoteContent}
                 onChange={e => setNewNoteContent(e.target.value)}
                 placeholder="Note…"
                 rows={3}
-                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
               />
               <button
                 onClick={addNote}
                 disabled={savingNote || !newNoteTitle.trim() || !newNoteContent.trim()}
-                className="w-full bg-orange-500 text-white rounded-xl py-2.5 text-sm font-semibold disabled:opacity-50"
+                className="w-full bg-stone-900 text-white rounded-xl py-2.5 text-sm font-semibold disabled:opacity-50"
               >
                 Add Note
               </button>
@@ -255,7 +330,7 @@ export default function Sidebar({ open, onClose }: Props) {
           <div className="flex-1 flex flex-col min-h-0">
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               {shopping.length === 0 && (
-                <p className="text-slate-400 text-sm text-center py-8">Shopping list is empty</p>
+                <p className="font-mono text-sm text-slate-400 text-center py-8 tracking-tight">Shopping list is empty</p>
               )}
               {STORES.map(store => {
                 const items = groupedShopping[store]
@@ -267,7 +342,7 @@ export default function Sidebar({ open, onClose }: Props) {
                     </div>
                     <div className="space-y-1.5">
                       {items.map(item => (
-                        <div key={item.id} className="flex items-center gap-3 bg-slate-50 rounded-xl px-3 py-2.5">
+                        <div key={item.id} className="flex items-center gap-3 bg-stone-50 border border-stone-900/90 shadow-sm rounded-xl px-3 py-2.5">
                           <button
                             onClick={() => toggleShoppingItem(item)}
                             className={`w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center transition-colors ${
@@ -300,49 +375,46 @@ export default function Sidebar({ open, onClose }: Props) {
                 )
               })}
             </div>
-            <div className="p-4 border-t border-slate-200 shrink-0 flex justify-center">
-              <div className="w-full max-w-xs space-y-2">
-              <div className="flex gap-2 items-start">
-                <div className="flex-1 min-w-0">
-                  <SuggestionNameInput
-                    value={newShoppingName}
-                    onChange={setNewShoppingName}
-                    suggestions={shoppingSuggestions}
-                    onSelectSuggestion={s => {
-                      setNewShoppingName(s.name)
-                      if (s.store) setNewShoppingStore(s.store)
-                      setNewShoppingCategory(s.category)
-                    }}
-                    getSubLabel={s => `${s.store ?? 'Any'} · ${SHOPPING_CATEGORY_LABELS[s.category]}`}
-                    placeholder="Add item…"
-                    inputClassName="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    onKeyDown={e => e.key === 'Enter' && addShoppingItem()}
-                  />
-                </div>
-                <button
-                  onClick={addShoppingItem}
-                  disabled={addingItem || !newShoppingName.trim()}
-                  className="p-2 bg-green-500 text-white rounded-xl disabled:opacity-50"
-                >
-                  <Plus size={18} />
-                </button>
-              </div>
+            <div className="p-4 border-t border-slate-200 shrink-0">
+              <div className="w-full space-y-2">
+              <SuggestionNameInput
+                value={newShoppingName}
+                onChange={setNewShoppingName}
+                suggestions={shoppingSuggestions}
+                onSelectSuggestion={s => {
+                  setNewShoppingName(s.name)
+                  if (s.store) setNewShoppingStore(s.store)
+                  setNewShoppingCategory(s.category)
+                }}
+                getSubLabel={s => `${s.store ?? 'Any'} · ${SHOPPING_CATEGORY_LABELS[s.category]}`}
+                placeholder="Add item…"
+                inputClassName="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onKeyDown={e => e.key === 'Enter' && addShoppingItem()}
+              />
               <select
                 value={newShoppingStore}
                 onChange={e => setNewShoppingStore(e.target.value as Store)}
-                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none"
+                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white text-slate-800 focus:outline-none"
               >
                 {STORES.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
               <select
                 value={newShoppingCategory}
                 onChange={e => setNewShoppingCategory(e.target.value as ShoppingCategory)}
-                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none"
+                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white text-slate-800 focus:outline-none"
               >
                 {CATEGORIES.map(c => (
                   <option key={c} value={c}>{SHOPPING_CATEGORY_LABELS[c]}</option>
                 ))}
               </select>
+              <button
+                type="button"
+                onClick={addShoppingItem}
+                disabled={addingItem || !newShoppingName.trim()}
+                className="w-full bg-stone-900 text-white rounded-xl py-2.5 text-sm font-semibold disabled:opacity-50"
+              >
+                Add Item
+              </button>
               </div>
             </div>
           </div>
