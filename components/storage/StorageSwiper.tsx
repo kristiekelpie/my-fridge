@@ -50,6 +50,19 @@ export default function StorageSwiper({ activeArea, onAreaChange, children }: Pr
   const mounted = useRef(false)
   const activePhysicalRef = useRef(START_INDEX)
   const [activePhysical, setActivePhysical] = useState(START_INDEX)
+  const [displayArea, setDisplayArea] = useState<StorageArea>(activeArea)
+
+  const syncFromScroll = useCallback(() => {
+    const el = scrollRef.current
+    if (!el || el.clientWidth === 0 || isJumping.current) return
+
+    const physical = Math.round(el.scrollLeft / el.clientWidth)
+    if (physical === activePhysicalRef.current) return
+
+    activePhysicalRef.current = physical
+    setActivePhysical(physical)
+    setDisplayArea(STORAGE_AREAS[logicalFromPhysical(physical)])
+  }, [])
 
   const scrollToPhysical = useCallback((index: number, smooth: boolean) => {
     const el = scrollRef.current
@@ -93,6 +106,7 @@ export default function StorageSwiper({ activeArea, onAreaChange, children }: Pr
     setActivePhysical(physical)
 
     const area = STORAGE_AREAS[logicalFromPhysical(physical)]
+    setDisplayArea(area)
 
     if (area !== activeArea) {
       skipExternalScroll.current = true
@@ -107,8 +121,13 @@ export default function StorageSwiper({ activeArea, onAreaChange, children }: Pr
 
   useEffect(() => {
     scrollToPhysical(primaryPhysical(logicalIndex(activeArea)), false)
+    setDisplayArea(activeArea)
     mounted.current = true
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    setDisplayArea(activeArea)
+  }, [activeArea])
 
   useEffect(() => {
     if (!mounted.current) return
@@ -128,7 +147,10 @@ export default function StorageSwiper({ activeArea, onAreaChange, children }: Pr
       settleScroll()
     }
 
-    const onScroll = () => scheduleSettle()
+    const onScroll = () => {
+      syncFromScroll()
+      scheduleSettle()
+    }
 
     const onResize = () => {
       scrollToPhysical(activePhysicalRef.current, false)
@@ -144,7 +166,7 @@ export default function StorageSwiper({ activeArea, onAreaChange, children }: Pr
       window.removeEventListener('resize', onResize)
       if (scrollEndTimer.current) clearTimeout(scrollEndTimer.current)
     }
-  }, [scheduleSettle, scrollToPhysical, settleScroll])
+  }, [scheduleSettle, scrollToPhysical, settleScroll, syncFromScroll])
 
   return (
     <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
@@ -172,7 +194,7 @@ export default function StorageSwiper({ activeArea, onAreaChange, children }: Pr
 
       <div className="shrink-0 flex items-center justify-center gap-2 px-4 py-2 border-t border-stone-300/50 bg-[#E8E4D7]/80">
         {STORAGE_AREAS.map(area => {
-          const selected = area === activeArea
+          const selected = area === displayArea
           return (
             <button
               key={area}
