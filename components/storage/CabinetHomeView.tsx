@@ -87,11 +87,17 @@ export default function CabinetHomeView({
             </>
           )}
 
-          <TapToOpenMobile />
+          <TapToOpenMobile
+            style={
+              area === 'wine_fridge'
+                ? { top: '34%', left: '6%' }
+                : undefined
+            }
+          />
           <TapToOpenDesktop />
           <SwipeHint show={showSwipeHint} />
 
-          {area !== 'cupboard' && (
+          {area === 'pantry' && (
             <>
               <div
                 className="hidden sm:block absolute z-20"
@@ -101,7 +107,7 @@ export default function CabinetHomeView({
               </div>
               <div
                 className="sm:hidden absolute z-20 -rotate-3"
-                style={{ top: '76%', right: '-0.25rem', transform: 'translate(8%, 0) rotate(-3deg)' }}
+                style={{ top: '76%', right: '-0.75rem', transform: 'translate(22%, 0) rotate(-3deg)' }}
               >
                 <ExpiringStamp count={expiringCount} compact onClick={onOpenExpiring} />
               </div>
@@ -136,7 +142,7 @@ export default function CabinetHomeView({
                 </div>
                 <div
                   className="sm:hidden absolute z-20 left-1/2 -translate-x-1/2"
-                  style={{ top: '100%', marginTop: '0.1rem' }}
+                  style={{ top: '100%', marginTop: '-0.45rem' }}
                 >
                   <ExpiringStamp count={expiringCount} compact below onClick={onOpenExpiring} />
                 </div>

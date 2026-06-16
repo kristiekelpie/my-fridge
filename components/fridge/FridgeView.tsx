@@ -199,7 +199,7 @@ export default function FridgeView({
           </div>
           <div
             className="sm:hidden absolute z-20 -rotate-3"
-            style={{ top: '76%', right: '-0.25rem', transform: 'translate(8%, 0) rotate(-3deg)' }}
+            style={{ top: '76%', right: '-0.75rem', transform: 'translate(22%, 0) rotate(-3deg)' }}
           >
             <ExpiringStamp count={expiringCount} compact onClick={onOpenExpiring} />
           </div>

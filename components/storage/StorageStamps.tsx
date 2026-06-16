@@ -131,9 +131,18 @@ export function ExpiringStamp({
   )
 }
 
-export function TapToOpenMobile() {
+export function TapToOpenMobile({
+  className = '',
+  style,
+}: {
+  className?: string
+  style?: React.CSSProperties
+}) {
   return (
-    <div className="absolute z-10 pointer-events-none sm:hidden" style={{ top: '29%', left: '-22%' }}>
+    <div
+      className={`absolute z-10 pointer-events-none sm:hidden ${className}`}
+      style={{ top: '29%', left: '-22%', ...style }}
+    >
       <div className="grid grid-cols-[auto_1fr] gap-x-0.5 -rotate-6">
         <span className="font-mono text-stone-900 text-[9px] leading-[1.15]">✻</span>
         <span className="font-mono text-[9px] font-bold tracking-wide text-stone-900 leading-[1.15]">tap</span>
@@ -216,4 +225,4 @@ export const CUPBOARD_HEIGHT_CLASS =
   'h-[min(calc((100dvh-6.5rem)*0.78),calc((100dvh-env(safe-area-inset-bottom)-6.5rem)*0.78),560px)] sm:h-[min(calc((100dvh-5rem)*0.7),calc((100dvh-env(safe-area-inset-bottom)-5rem)*0.7),448px)]'
 
 export const WINE_FRIDGE_HEIGHT_CLASS =
-  'h-[min(calc((100dvh-6.5rem)*0.82),calc((100dvh-env(safe-area-inset-bottom)-6.5rem)*0.82),600px)] sm:h-[min(calc((100dvh-5rem)*0.75),calc((100dvh-env(safe-area-inset-bottom)-5rem)*0.75),480px)]'
+  'h-[min(calc((100dvh-6.5rem)*0.72),calc((100dvh-env(safe-area-inset-bottom)-6.5rem)*0.72),520px)] sm:h-[min(calc((100dvh-5rem)*0.75),calc((100dvh-env(safe-area-inset-bottom)-5rem)*0.75),480px)]'
