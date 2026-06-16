@@ -8,7 +8,7 @@ update household_items set category = 'protein' where category = 'meat';
 update household_items set category = 'sauces' where category = 'jarred_sauces';
 alter table household_items drop constraint if exists household_items_category_check;
 alter table household_items add constraint household_items_category_check
-  check (category in ('protein', 'vegetables', 'dairy', 'sauces', 'starch', 'cooked_food', 'fruits', 'condiments', 'drinks', 'other'));
+  check (category in ('protein', 'vegetables', 'dairy', 'sauces', 'starch', 'dry_goods', 'snacks', 'cooked_food', 'fruits', 'condiments', 'drinks', 'alcohol', 'red_wine', 'white_wine', 'other'));
 
 -- Shopping list: category + Other store
 alter table shopping_items add column if not exists category text not null default 'food';
@@ -24,7 +24,7 @@ create table if not exists fridge_item_suggestions (
   id uuid default gen_random_uuid() primary key,
   name text not null,
   name_normalized text not null unique,
-  category text not null check (category in ('protein', 'vegetables', 'dairy', 'sauces', 'starch', 'cooked_food', 'fruits', 'condiments', 'drinks', 'other')),
+  category text not null check (category in ('protein', 'vegetables', 'dairy', 'sauces', 'starch', 'dry_goods', 'snacks', 'cooked_food', 'fruits', 'condiments', 'drinks', 'alcohol', 'red_wine', 'white_wine', 'other')),
   location text not null check (location in ('freezer', 'shelf1', 'shelf2', 'upper_drawer', 'shelf3', 'lower_drawer', 'door')),
   notes text,
   photo_url text,

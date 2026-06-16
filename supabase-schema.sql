@@ -6,9 +6,16 @@ create table if not exists household_items (
   created_at timestamptz default now() not null,
   updated_at timestamptz default now() not null,
   name text not null,
-  category text not null check (category in ('protein', 'vegetables', 'dairy', 'sauces', 'starch', 'cooked_food', 'fruits', 'condiments', 'drinks', 'other')),
+  category text not null check (category in ('protein', 'vegetables', 'dairy', 'sauces', 'starch', 'dry_goods', 'snacks', 'cooked_food', 'fruits', 'condiments', 'drinks', 'alcohol', 'red_wine', 'white_wine', 'other')),
   expiry_date date not null,
-  location text not null check (location in ('freezer', 'shelf1', 'shelf2', 'upper_drawer', 'shelf3', 'lower_drawer', 'door')),
+  storage_area text not null default 'fridge' check (storage_area in ('fridge', 'pantry', 'cupboard', 'wine_fridge')),
+  location text not null check (location in (
+    'freezer', 'shelf1', 'shelf2', 'upper_drawer', 'shelf3', 'lower_drawer', 'door',
+    'pantry_main', 'cupboard_main', 'wine_main',
+    'pantry_top', 'pantry_middle', 'pantry_bottom', 'pantry_basket',
+    'cupboard_upper', 'cupboard_lower', 'cupboard_spice',
+    'wine_top', 'wine_middle', 'wine_bottom', 'wine_door'
+  )),
   photo_url text,
   notes text
 );
@@ -38,7 +45,7 @@ create table if not exists fridge_item_suggestions (
   id uuid default gen_random_uuid() primary key,
   name text not null,
   name_normalized text not null unique,
-  category text not null check (category in ('protein', 'vegetables', 'dairy', 'sauces', 'starch', 'cooked_food', 'fruits', 'condiments', 'drinks', 'other')),
+  category text not null check (category in ('protein', 'vegetables', 'dairy', 'sauces', 'starch', 'dry_goods', 'snacks', 'cooked_food', 'fruits', 'condiments', 'drinks', 'alcohol', 'red_wine', 'white_wine', 'other')),
   location text not null check (location in ('freezer', 'shelf1', 'shelf2', 'upper_drawer', 'shelf3', 'lower_drawer', 'door')),
   notes text,
   photo_url text,

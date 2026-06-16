@@ -10,6 +10,7 @@ interface Props {
   emptyMessage?: string
   children: React.ReactNode
   footer?: React.ReactNode
+  headerExtra?: React.ReactNode
 }
 
 export default function CategoryListPage({
@@ -20,10 +21,11 @@ export default function CategoryListPage({
   emptyMessage = 'nothing here yet',
   children,
   footer,
+  headerExtra,
 }: Props) {
   return (
     <div className="flex-1 flex flex-col min-h-0 paper relative">
-      <div className="px-5 pt-5 pb-4 border-b border-stone-400/40 shrink-0">
+      <div className="px-5 pt-5 pb-4 border-b border-stone-400/40 shrink-0 overflow-visible relative z-20">
         <button
           type="button"
           onClick={onBack}
@@ -36,6 +38,7 @@ export default function CategoryListPage({
           <span className="editorial-underline font-bold">{title}</span>
         </h2>
         <p className="font-mono text-sm text-stone-600 mt-1 tracking-tight">{subtitle}</p>
+        {headerExtra}
       </div>
 
       <div className="flex-1 overflow-y-auto px-5 py-5">

@@ -4,19 +4,53 @@ export type Category =
   | 'dairy'
   | 'sauces'
   | 'starch'
+  | 'dry_goods'
+  | 'snacks'
   | 'cooked_food'
   | 'fruits'
   | 'condiments'
   | 'drinks'
+  | 'alcohol'
+  | 'red_wine'
+  | 'white_wine'
   | 'other'
 
-export type Location = 'freezer' | 'shelf1' | 'shelf2' | 'upper_drawer' | 'shelf3' | 'lower_drawer' | 'door'
+export type Location =
+  | 'freezer'
+  | 'shelf1'
+  | 'shelf2'
+  | 'upper_drawer'
+  | 'shelf3'
+  | 'lower_drawer'
+  | 'door'
+  | 'pantry_main'
+  | 'cupboard_main'
+  | 'wine_main'
+  | 'pantry_top'
+  | 'pantry_middle'
+  | 'pantry_bottom'
+  | 'pantry_basket'
+  | 'cupboard_upper'
+  | 'cupboard_lower'
+  | 'cupboard_spice'
+  | 'wine_top'
+  | 'wine_middle'
+  | 'wine_bottom'
+  | 'wine_door'
+
+export type StorageArea = 'fridge' | 'pantry' | 'cupboard' | 'wine_fridge'
 export type Store = 'Costco' | 'Walmart' | 'Albertsons' | 'Any' | 'Other'
 export type ShoppingCategory = 'food' | 'household' | 'personal'
 export type ExpiryStatus = 'fresh' | 'soon' | 'urgent' | 'expired'
 
 /** Items on the Expiring Soon page and stamp when expiry is within this many days (inclusive). */
 export const EXPIRING_SOON_DAYS = 3
+
+/** Default cooked food shelf life when not in the freezer (days from today). */
+export const COOKED_FOOD_DAYS = 4
+
+/** Default cooked food shelf life when stored in the freezer (months from today). */
+export const COOKED_FOOD_FREEZER_MONTHS = 6
 
 export interface HouseholdItem {
   id: string
@@ -25,6 +59,7 @@ export interface HouseholdItem {
   name: string
   category: Category
   expiry_date: string
+  storage_area: StorageArea
   location: Location
   photo_url: string | null
   notes: string | null
@@ -65,13 +100,18 @@ export const SHOPPING_CATEGORY_LABELS: Record<ShoppingCategory, string> = {
 export const CATEGORIES: Category[] = [
   'protein',
   'vegetables',
-  'dairy',
-  'sauces',
-  'starch',
-  'cooked_food',
   'fruits',
+  'dairy',
+  'starch',
+  'dry_goods',
+  'snacks',
+  'sauces',
   'condiments',
+  'cooked_food',
   'drinks',
+  'alcohol',
+  'red_wine',
+  'white_wine',
   'other',
 ]
 
@@ -79,12 +119,17 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   protein: 'Protein',
   vegetables: 'Vegetables',
   dairy: 'Dairy',
-  sauces: 'Sauces',
-  starch: 'Starch',
+  sauces: 'Jarred/Sauces',
+  starch: 'Carbs/Starch',
+  dry_goods: 'Dry Goods',
+  snacks: 'Snacks',
   cooked_food: 'Cooked Food',
   fruits: 'Fruits',
   condiments: 'Condiments',
   drinks: 'Drinks',
+  alcohol: 'Alcohol',
+  red_wine: 'Red Wine',
+  white_wine: 'White Wine',
   other: 'Other',
 }
 
@@ -96,6 +141,20 @@ export const LOCATION_LABELS: Record<Location, string> = {
   shelf3: '3rd Shelf',
   lower_drawer: 'Lower Drawer',
   door: 'Fridge Door',
+  pantry_main: 'Pantry',
+  cupboard_main: 'Cupboard',
+  wine_main: 'Wine Fridge',
+  pantry_top: 'Top Shelf',
+  pantry_middle: 'Middle Shelf',
+  pantry_bottom: 'Bottom Shelf',
+  pantry_basket: 'Basket',
+  cupboard_upper: 'Upper Cupboard',
+  cupboard_lower: 'Lower Cupboard',
+  cupboard_spice: 'Spice Rack',
+  wine_top: 'Top Rack',
+  wine_middle: 'Middle Rack',
+  wine_bottom: 'Bottom Rack',
+  wine_door: 'Door Rack',
 }
 
 export const CATEGORY_EMOJI: Record<Category, string> = {
@@ -104,10 +163,15 @@ export const CATEGORY_EMOJI: Record<Category, string> = {
   dairy: '🧀',
   sauces: '🍝',
   starch: '🍚',
+  dry_goods: '🌾',
+  snacks: '🍿',
   cooked_food: '🍱',
   fruits: '🍎',
   condiments: '🧂',
   drinks: '🥤',
+  alcohol: '🍸',
+  red_wine: '🍷',
+  white_wine: '🥂',
   other: '📦',
 }
 
@@ -122,13 +186,35 @@ export function normalizeCategory(raw: string): Category {
   return 'other'
 }
 
-export function normalizeItem(item: HouseholdItem): HouseholdItem {
-  return { ...item, category: normalizeCategory(item.category) }
+export function normalizeItem(item: HouseholdItem & { storage_area?: StorageArea | null }): HouseholdItem {
+  const storage_area =
+    item.storage_area && item.storage_area in { fridge: 1, pantry: 1, cupboard: 1, wine_fridge: 1 }
+      ? item.storage_area
+      : 'fridge'
+  return { ...item, category: normalizeCategory(item.category), storage_area }
 }
 
 function parseLocalDate(dateStr: string): Date {
   const [y, m, d] = dateStr.split('T')[0].split('-').map(Number)
   return new Date(y, m - 1, d)
+}
+
+export function formatLocalDateISO(date: Date): string {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+export function getCookedFoodDefaultExpiryDate(location: Location, from = new Date()): string {
+  const base = new Date(from)
+  base.setHours(0, 0, 0, 0)
+  if (location === 'freezer') {
+    base.setMonth(base.getMonth() + COOKED_FOOD_FREEZER_MONTHS)
+  } else {
+    base.setDate(base.getDate() + COOKED_FOOD_DAYS)
+  }
+  return formatLocalDateISO(base)
 }
 
 export function daysUntilExpiry(expiryDate: string): number {

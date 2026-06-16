@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Category, Location, ShoppingCategory, Store } from '@/lib/types'
+import type { Category, Location, ShoppingCategory, Store, StorageArea } from '@/lib/types'
 import { normalizeCategory, CATEGORIES } from '@/lib/types'
 
 export interface FridgeItemSuggestion {
@@ -143,6 +143,7 @@ export async function upsertFridgeSuggestion(
     name: string
     category: Category
     location: Location
+    storage_area?: StorageArea
     notes?: string | null
     photo_url?: string | null
   }

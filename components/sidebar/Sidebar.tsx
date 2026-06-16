@@ -237,7 +237,7 @@ export default function Sidebar({
               className="w-full flex items-center justify-between px-4 py-4 bg-stone-50 border border-stone-900/90 shadow-sm rounded-xl active:bg-stone-100 text-left"
             >
               <div>
-                <div className="font-mono text-sm font-semibold text-slate-800">Inventory</div>
+                <div className="font-mono text-sm font-semibold text-slate-800">Master Inventory</div>
                 <div className="font-mono text-xs text-slate-500 mt-0.5">
                   {itemCount} item{itemCount !== 1 ? 's' : ''}
                 </div>

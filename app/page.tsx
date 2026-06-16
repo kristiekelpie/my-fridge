@@ -2,19 +2,25 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/client'
-import { HouseholdItem, normalizeItem, isExpiringWithinDays, EXPIRING_SOON_DAYS } from '@/lib/types'
+import { HouseholdItem, normalizeItem, isExpiringWithinDays, EXPIRING_SOON_DAYS, StorageArea } from '@/lib/types'
 import FridgeView from '@/components/fridge/FridgeView'
 import ItemForm from '@/components/items/ItemForm'
 import HistoryView from '@/components/history/HistoryView'
+import MasterInventoryView from '@/components/fridge/MasterInventoryView'
 import ItemListByCategory from '@/components/fridge/ItemListByCategory'
+import ItemListByStorageArea from '@/components/fridge/ItemListByStorageArea'
 import Sidebar from '@/components/sidebar/Sidebar'
+import StorageSwiper from '@/components/storage/StorageSwiper'
+import CabinetHomeView from '@/components/storage/CabinetHomeView'
+import { filterItemsByArea, STORAGE_AREA_LABELS } from '@/lib/storageAreas'
 import { Plus, Menu } from 'lucide-react'
 
-type FullPageView = 'history' | 'inventory' | 'expiring'
+type FullPageView = 'history' | 'inventory' | 'master-inventory' | 'expiring'
 
 export default function HomePage() {
   const supabase = createClient()
   const [items, setItems] = useState<HouseholdItem[]>([])
+  const [activeArea, setActiveArea] = useState<StorageArea>('fridge')
   const [showForm, setShowForm] = useState(false)
   const [editItem, setEditItem] = useState<HouseholdItem | null>(null)
   const [formPrefill, setFormPrefill] = useState<Partial<HouseholdItem> | undefined>()
@@ -23,9 +29,10 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true)
   const [fetchError, setFetchError] = useState<string | null>(null)
 
+  const areaItems = filterItemsByArea(items, activeArea)
   const totalItems = items.length
-  const expiringItems = items.filter(i => isExpiringWithinDays(i.expiry_date, EXPIRING_SOON_DAYS))
-  const expiringCount = expiringItems.length
+  const allExpiringItems = items.filter(i => isExpiringWithinDays(i.expiry_date, EXPIRING_SOON_DAYS))
+  const allExpiringCount = allExpiringItems.length
 
   const fetchItems = useCallback(async () => {
     if (!isSupabaseConfigured()) {
@@ -101,7 +108,7 @@ export default function HomePage() {
   function handleAddHistoryToFridge(item: Partial<HouseholdItem>) {
     setFullPageView(null)
     setEditItem(null)
-    setFormPrefill(item)
+    setFormPrefill({ ...item, storage_area: activeArea })
     setShowForm(true)
   }
 
@@ -110,9 +117,18 @@ export default function HomePage() {
     setFullPageView(view)
   }
 
+  const inventoryTitle =
+    activeArea === 'fridge' ? 'Inventory' : `${STORAGE_AREA_LABELS[activeArea]} Inventory`
+
+  const sharedViewProps = {
+    onEdit: handleEdit,
+    onDelete: handleDelete,
+    onOpenInventory: () => openFullPageView('inventory'),
+    onOpenExpiring: () => openFullPageView('expiring'),
+  }
+
   return (
     <div className="fixed inset-0 flex flex-col paper">
-      {/* Menu icon only — no banner */}
       <button
         onClick={() => setSidebarOpen(true)}
         className="fixed z-40 p-2 text-stone-600 active:text-stone-900 active:scale-95 transition-transform"
@@ -125,7 +141,6 @@ export default function HomePage() {
         <Menu size={22} strokeWidth={2} />
       </button>
 
-      {/* Main content */}
       <main className="flex-1 flex flex-col min-h-0 overflow-hidden">
         {!isSupabaseConfigured() && (
           <div className="shrink-0 mx-5 mt-3 px-3 py-2 bg-amber-50 border border-amber-300 rounded-lg font-mono text-[10px] text-amber-900 leading-snug">
@@ -134,7 +149,7 @@ export default function HomePage() {
         )}
         {fetchError && (
           <div className="shrink-0 mx-5 mt-3 px-3 py-2 bg-red-50 border border-red-300 rounded-lg font-mono text-[10px] text-red-900 leading-snug">
-            Could not load fridge items: {fetchError}
+            Could not load items: {fetchError}
           </div>
         )}
         {loading ? (
@@ -148,36 +163,41 @@ export default function HomePage() {
             onBack={() => setFullPageView(null)}
             onAddToFridge={handleAddHistoryToFridge}
           />
+        ) : fullPageView === 'master-inventory' ? (
+          <MasterInventoryView
+            items={items}
+            onBack={() => setFullPageView(null)}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
         ) : fullPageView === 'inventory' ? (
           <ItemListByCategory
-            title="Inventory"
-            subtitle={`${totalItems} item${totalItems !== 1 ? 's' : ''} — grouped by category`}
-            items={items}
+            title={inventoryTitle}
+            subtitle={`${areaItems.length} item${areaItems.length !== 1 ? 's' : ''} — grouped by category`}
+            items={areaItems}
             onBack={() => setFullPageView(null)}
             onEdit={handleEdit}
             onDelete={handleDelete}
           />
         ) : fullPageView === 'expiring' ? (
-          <ItemListByCategory
+          <ItemListByStorageArea
             title="Expiring Soon"
-            subtitle={`${expiringCount} item${expiringCount !== 1 ? 's' : ''} — grouped by category`}
-            items={expiringItems}
+            subtitle={`${allExpiringCount} item${allExpiringCount !== 1 ? 's' : ''} — all storage areas`}
+            items={allExpiringItems}
             onBack={() => setFullPageView(null)}
             onEdit={handleEdit}
             onDelete={handleDelete}
           />
         ) : (
-          <FridgeView
-            items={items}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onOpenInventory={() => setFullPageView('inventory')}
-            onOpenExpiring={() => setFullPageView('expiring')}
-          />
+          <StorageSwiper activeArea={activeArea} onAreaChange={setActiveArea}>
+            <FridgeView items={filterItemsByArea(items, 'fridge')} showSwipeHint {...sharedViewProps} />
+            <CabinetHomeView area="pantry" items={filterItemsByArea(items, 'pantry')} {...sharedViewProps} />
+            <CabinetHomeView area="cupboard" items={filterItemsByArea(items, 'cupboard')} {...sharedViewProps} />
+            <CabinetHomeView area="wine_fridge" items={filterItemsByArea(items, 'wine_fridge')} {...sharedViewProps} />
+          </StorageSwiper>
         )}
       </main>
 
-      {/* FAB */}
       <button
         onClick={() => setShowForm(true)}
         className="fixed z-30 w-14 h-14 bg-stone-900 text-stone-50 rounded-full shadow-lg flex items-center justify-center active:scale-95 transition-transform border-2 border-stone-50"
@@ -191,23 +211,22 @@ export default function HomePage() {
         <Plus size={26} strokeWidth={2.5} />
       </button>
 
-      {/* Item form modal */}
       {showForm && (
         <ItemForm
-          key={editItem?.id ?? `prefill-${formPrefill?.name ?? 'new'}`}
+          key={editItem?.id ?? `prefill-${formPrefill?.name ?? 'new'}-${activeArea}`}
           initialItem={editItem ?? formPrefill}
+          storageArea={editItem?.storage_area ?? formPrefill?.storage_area ?? activeArea}
           onSave={() => { handleFormClose(); fetchItems() }}
           onClose={handleFormClose}
         />
       )}
 
-      {/* Sidebar */}
       <Sidebar
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         itemCount={totalItems}
-        expiringCount={expiringCount}
-        onOpenInventory={() => openFullPageView('inventory')}
+        expiringCount={allExpiringCount}
+        onOpenInventory={() => openFullPageView('master-inventory')}
         onOpenExpiring={() => openFullPageView('expiring')}
         onOpenHistory={() => openFullPageView('history')}
       />

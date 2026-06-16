@@ -91,6 +91,15 @@ body {
   box-sizing: border-box;
 }
 
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
 input[type="date"].form-field {
   width: 100%;
   max-width: 100%;

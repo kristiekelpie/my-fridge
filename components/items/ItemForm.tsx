@@ -2,7 +2,8 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/client'
-import { HouseholdItem, Category, Location, CATEGORY_LABELS, LOCATION_LABELS, CATEGORIES, normalizeCategory } from '@/lib/types'
+import { HouseholdItem, Category, Location, StorageArea, CATEGORY_LABELS, LOCATION_LABELS, CATEGORIES, normalizeCategory, getCookedFoodDefaultExpiryDate } from '@/lib/types'
+import { LOCATIONS_BY_AREA, STORAGE_AREA_LABELS, getDefaultLocation } from '@/lib/storageAreas'
 import { fetchFridgeSuggestions, upsertFridgeSuggestion, type FridgeItemSuggestion } from '@/lib/suggestions'
 import { fileToResizedDataUrl, dataUrlToBlob } from '@/lib/doorPhotos'
 import SuggestionNameInput from '@/components/items/SuggestionNameInput'
@@ -11,23 +12,35 @@ import { Camera, Image as ImageIcon, Loader2, ChevronLeft } from 'lucide-react'
 interface Props {
   initialItem?: Partial<HouseholdItem>
   defaultLocation?: Location
+  storageArea: StorageArea
   onSave: () => void
   onClose: () => void
 }
 
-const LOCATIONS: Location[] = ['freezer', 'shelf1', 'shelf2', 'upper_drawer', 'shelf3', 'lower_drawer', 'door']
-
 const FORM_FIELD =
   'form-field border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500'
 
-export default function ItemForm({ initialItem, defaultLocation, onSave, onClose }: Props) {
+function getErrorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message
+  if (err && typeof err === 'object' && 'message' in err && typeof err.message === 'string') {
+    return err.message
+  }
+  return 'Save failed'
+}
+
+export default function ItemForm({ initialItem, defaultLocation, storageArea, onSave, onClose }: Props) {
   const supabase = createClient()
+  const locations = LOCATIONS_BY_AREA[storageArea]
   const [name, setName] = useState(initialItem?.name ?? '')
   const [category, setCategory] = useState<Category>(
     initialItem?.category ? normalizeCategory(initialItem.category) : 'other'
   )
   const [expiryDate, setExpiryDate] = useState(initialItem?.expiry_date ?? '')
-  const [location, setLocation] = useState<Location>(initialItem?.location ?? defaultLocation ?? 'shelf1')
+  const [location, setLocation] = useState<Location>(
+    initialItem?.location && locations.includes(initialItem.location)
+      ? initialItem.location
+      : defaultLocation ?? getDefaultLocation(storageArea)
+  )
   const [notes, setNotes] = useState(initialItem?.notes ?? '')
   const [photoUrl, setPhotoUrl] = useState(initialItem?.photo_url ?? '')
   const [uploading, setUploading] = useState(false)
@@ -35,8 +48,14 @@ export default function ItemForm({ initialItem, defaultLocation, onSave, onClose
   const [error, setError] = useState<string | null>(null)
   const [suggestions, setSuggestions] = useState<FridgeItemSuggestion[]>([])
   const fileRef = useRef<HTMLInputElement>(null)
+  const expiryEditedRef = useRef(!!initialItem?.expiry_date)
 
   const isEdit = !!initialItem?.id
+
+  useEffect(() => {
+    if (isEdit || category !== 'cooked_food' || expiryEditedRef.current) return
+    setExpiryDate(getCookedFoodDefaultExpiryDate(location))
+  }, [category, location, isEdit])
 
   const loadSuggestions = useCallback(async () => {
     if (!isSupabaseConfigured()) return
@@ -88,6 +107,7 @@ export default function ItemForm({ initialItem, defaultLocation, onSave, onClose
       name: name.trim(),
       category,
       expiry_date: expiryDate,
+      storage_area: storageArea,
       location,
       notes: notes.trim() || null,
       photo_url: photoUrl || null,
@@ -107,10 +127,19 @@ export default function ItemForm({ initialItem, defaultLocation, onSave, onClose
         if (error) throw error
       }
 
-      await upsertFridgeSuggestion(supabase, payload)
+      await upsertFridgeSuggestion(supabase, payload).catch(() => {
+        // Item saved — suggestion history is optional
+      })
       onSave()
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Save failed')
+      const message = getErrorMessage(err)
+      if (message.includes('storage_area')) {
+        setError(
+          'Save failed: database is missing the storage_area column. Run supabase-storage-areas.sql in Supabase → SQL Editor.'
+        )
+      } else {
+        setError(message)
+      }
       setSaving(false)
     }
   }
@@ -128,7 +157,7 @@ export default function ItemForm({ initialItem, defaultLocation, onSave, onClose
         </button>
         <div className="text-right">
           <p className="font-mono text-[10px] tracking-[0.25em] uppercase text-stone-500">
-            {isEdit ? 'Editing' : 'Adding to fridge'}
+            {isEdit ? 'Editing' : `Adding to ${STORAGE_AREA_LABELS[storageArea].toLowerCase()}`}
           </p>
           <h2 className="font-mono text-xl tracking-tight text-stone-900 mt-0.5">
             <span className="editorial-underline font-bold">{isEdit ? 'Edit Item' : 'New Item'}</span>
@@ -220,13 +249,24 @@ export default function ItemForm({ initialItem, defaultLocation, onSave, onClose
           <input
             type="date"
             value={expiryDate}
-            onChange={e => setExpiryDate(e.target.value)}
+            onChange={e => {
+              expiryEditedRef.current = true
+              setExpiryDate(e.target.value)
+            }}
             required
             className={FORM_FIELD}
           />
+          {category === 'cooked_food' && !isEdit && (
+            <p className="font-mono text-[10px] text-stone-500 mt-1">
+              {location === 'freezer'
+                ? 'Default 6-month freezer shelf life — adjust if needed'
+                : 'Default 4-day shelf life — adjust if needed'}
+            </p>
+          )}
         </div>
 
-        {/* Location */}
+        {/* Location — fridge only; other areas use a single compartment */}
+        {storageArea === 'fridge' && (
         <div className="min-w-0">
           <label className="block text-sm font-medium text-slate-700 mb-1">Location *</label>
           <select
@@ -234,11 +274,12 @@ export default function ItemForm({ initialItem, defaultLocation, onSave, onClose
             onChange={e => setLocation(e.target.value as Location)}
             className={FORM_FIELD}
           >
-            {LOCATIONS.map(l => (
+            {locations.map(l => (
               <option key={l} value={l}>{LOCATION_LABELS[l]}</option>
             ))}
           </select>
         </div>
+        )}
 
         {/* Notes */}
         <div className="min-w-0">
@@ -264,7 +305,7 @@ export default function ItemForm({ initialItem, defaultLocation, onSave, onClose
           disabled={saving || uploading || !name.trim() || !expiryDate}
           className="w-full appearance-none border-0 bg-stone-900 text-white rounded-xl py-2.5 text-sm font-semibold disabled:opacity-50 active:bg-stone-800 transition-colors"
         >
-          {saving ? 'Saving…' : isEdit ? 'Save changes' : 'Add to fridge'}
+          {saving ? 'Saving…' : isEdit ? 'Save changes' : `Add to ${STORAGE_AREA_LABELS[storageArea].toLowerCase()}`}
         </button>
       </div>
     </div>
