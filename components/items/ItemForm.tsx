@@ -7,6 +7,7 @@ import { LOCATIONS_BY_AREA, STORAGE_AREA_LABELS, getDefaultLocation } from '@/li
 import { fetchFridgeSuggestions, upsertFridgeSuggestion, type FridgeItemSuggestion } from '@/lib/suggestions'
 import { fileToResizedDataUrl, dataUrlToBlob } from '@/lib/doorPhotos'
 import SuggestionNameInput from '@/components/items/SuggestionNameInput'
+import { DESKTOP_PAGE_COLUMN_CLASS } from '@/components/layout/ConstrainedPageShell'
 import { Camera, Image as ImageIcon, Loader2, ChevronLeft } from 'lucide-react'
 
 interface Props {
@@ -145,9 +146,12 @@ export default function ItemForm({ initialItem, defaultLocation, storageArea, on
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col paper">
+    <div className="fixed inset-0 z-50 flex flex-col paper sm:px-4">
+      <div
+        className={`${DESKTOP_PAGE_COLUMN_CLASS} sm:max-h-[calc(100dvh-2rem)] sm:my-4 sm:rounded-2xl sm:border sm:border-stone-300/50 sm:shadow-lg sm:overflow-hidden bg-[var(--paper)]`}
+      >
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-stone-400/40">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-stone-400/40 shrink-0">
         <button
           onClick={onClose}
           className="flex items-center gap-2 -ml-2 py-2 pr-3 rounded-md active:bg-stone-200/80 font-mono text-sm tracking-[0.15em] uppercase text-stone-700"
@@ -307,6 +311,7 @@ export default function ItemForm({ initialItem, defaultLocation, storageArea, on
         >
           {saving ? 'Saving…' : isEdit ? 'Save changes' : `Add to ${STORAGE_AREA_LABELS[storageArea].toLowerCase()}`}
         </button>
+      </div>
       </div>
     </div>
   )

@@ -81,7 +81,12 @@ export default function DoorPolaroid({
             <div className="relative w-[4.5rem] h-[4.25rem] sm:w-[5rem] sm:h-[4.75rem] bg-stone-100 overflow-hidden">
               {photoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={photoUrl} alt="" className="w-full h-full object-cover" />
+                <img
+                  src={photoUrl}
+                  alt=""
+                  className="w-full h-full object-cover"
+                  loading="eager"
+                />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-stone-50 to-stone-200/80">
                   <span className="font-mono text-[7px] text-stone-400 uppercase tracking-wider">photo</span>

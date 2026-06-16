@@ -7,9 +7,8 @@ import FridgeClosed from './FridgeClosed'
 import FridgeInteriorOpen from './FridgeInteriorOpen'
 import ZoneInterior from './ZoneInterior'
 import KitchenNotesView from '@/components/kitchen/KitchenNotesView'
-import { fetchDoorPhotoUrls, uploadDoorPhoto } from '@/lib/fridgeDoor'
 import { isSupabaseConfigured } from '@/lib/supabase/client'
-import type { PolaroidSlot } from './DoorPolaroid'
+import { useDoorPhotos } from './DoorPhotosContext'
 import {
   ExpiringStamp,
   InstockStamp,
@@ -43,12 +42,10 @@ export default function FridgeView({
 }: Props) {
   const supabase = createClient()
   const isActivePanel = useStoragePanelActive()
+  const { photos, uploadPhoto } = useDoorPhotos()
   const [isOpen, setIsOpen] = useState(false)
   const [selectedZone, setSelectedZone] = useState<Location | null>(null)
   const [kitchenNotesOpen, setKitchenNotesOpen] = useState(false)
-  const [upperPhotoUrl, setUpperPhotoUrl] = useState<string | null>(null)
-  const [lowerPhotoUrl, setLowerPhotoUrl] = useState<string | null>(null)
-  const [leftPhotoUrl, setLeftPhotoUrl] = useState<string | null>(null)
   const [notes, setNotes] = useState<MealNote[]>([])
   const [shopping, setShopping] = useState<ShoppingItem[]>([])
 
@@ -59,19 +56,6 @@ export default function FridgeView({
 
   const totalItems = items.length
   const expiringCount = items.filter(i => isExpiringWithinDays(i.expiry_date, EXPIRING_SOON_DAYS)).length
-
-  const setPhotoForSlot = useCallback((slot: PolaroidSlot, url: string | null) => {
-    if (slot === 'upper') setUpperPhotoUrl(url)
-    else if (slot === 'lower') setLowerPhotoUrl(url)
-    else setLeftPhotoUrl(url)
-  }, [])
-
-  const fetchDoorPhotos = useCallback(async () => {
-    const urls = await fetchDoorPhotoUrls()
-    setUpperPhotoUrl(urls.upper)
-    setLowerPhotoUrl(urls.lower)
-    setLeftPhotoUrl(urls.left)
-  }, [])
 
   const fetchNotes = useCallback(async () => {
     if (!isSupabaseConfigured()) return
@@ -94,16 +78,10 @@ export default function FridgeView({
   useEffect(() => {
     if (!isActivePanel) return
 
-    fetchDoorPhotos()
     fetchNotes()
     fetchShopping()
 
     if (!isSupabaseConfigured()) return
-
-    const doorChannel = supabase
-      .channel('fridge-door-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'fridge_door' }, fetchDoorPhotos)
-      .subscribe()
 
     const notesChannel = supabase
       .channel('fridge-paper-notes')
@@ -116,16 +94,10 @@ export default function FridgeView({
       .subscribe()
 
     return () => {
-      supabase.removeChannel(doorChannel)
       supabase.removeChannel(notesChannel)
       supabase.removeChannel(shoppingChannel)
     }
-  }, [fetchDoorPhotos, fetchNotes, fetchShopping, isActivePanel, supabase])
-
-  async function handleUploadPolaroid(slot: PolaroidSlot, file: File) {
-    const url = await uploadDoorPhoto(slot, file)
-    setPhotoForSlot(slot, url)
-  }
+  }, [fetchNotes, fetchShopping, isActivePanel, supabase])
 
   function handleOpenFreezer() {
     setSelectedZone('freezer')
@@ -238,10 +210,10 @@ export default function FridgeView({
             onOpenNotes={() => setKitchenNotesOpen(true)}
             notes={notes}
             shopping={shopping}
-            upperPhotoUrl={upperPhotoUrl}
-            lowerPhotoUrl={lowerPhotoUrl}
-            leftPhotoUrl={leftPhotoUrl}
-            onUploadPolaroid={handleUploadPolaroid}
+            upperPhotoUrl={photos.upper}
+            lowerPhotoUrl={photos.lower}
+            leftPhotoUrl={photos.left}
+            onUploadPolaroid={uploadPhoto}
             className={FRIDGE_HEIGHT_CLASS}
           />
         </div>

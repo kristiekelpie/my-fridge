@@ -11,6 +11,7 @@ import ItemListByCategory from '@/components/fridge/ItemListByCategory'
 import ItemListByStorageArea from '@/components/fridge/ItemListByStorageArea'
 import Sidebar from '@/components/sidebar/Sidebar'
 import StorageSwiper from '@/components/storage/StorageSwiper'
+import { DoorPhotosProvider } from '@/components/fridge/DoorPhotosContext'
 import CabinetHomeView from '@/components/storage/CabinetHomeView'
 import { filterItemsByArea, STORAGE_AREA_LABELS } from '@/lib/storageAreas'
 import { Plus, Menu } from 'lucide-react'
@@ -189,12 +190,14 @@ export default function HomePage() {
             onDelete={handleDelete}
           />
         ) : (
-          <StorageSwiper activeArea={activeArea} onAreaChange={setActiveArea}>
-            <FridgeView items={filterItemsByArea(items, 'fridge')} showSwipeHint {...sharedViewProps} />
-            <CabinetHomeView area="pantry" items={filterItemsByArea(items, 'pantry')} {...sharedViewProps} />
-            <CabinetHomeView area="cupboard" items={filterItemsByArea(items, 'cupboard')} {...sharedViewProps} />
-            <CabinetHomeView area="wine_fridge" items={filterItemsByArea(items, 'wine_fridge')} {...sharedViewProps} />
-          </StorageSwiper>
+          <DoorPhotosProvider>
+            <StorageSwiper activeArea={activeArea} onAreaChange={setActiveArea}>
+              <FridgeView items={filterItemsByArea(items, 'fridge')} showSwipeHint {...sharedViewProps} />
+              <CabinetHomeView area="pantry" items={filterItemsByArea(items, 'pantry')} {...sharedViewProps} />
+              <CabinetHomeView area="cupboard" items={filterItemsByArea(items, 'cupboard')} {...sharedViewProps} />
+              <CabinetHomeView area="wine_fridge" items={filterItemsByArea(items, 'wine_fridge')} {...sharedViewProps} />
+            </StorageSwiper>
+          </DoorPhotosProvider>
         )}
       </main>
 

@@ -6,6 +6,7 @@ import { MealNote, ShoppingItem, Store, ShoppingCategory, SHOPPING_CATEGORY_LABE
 import { toggleShoppingItemChecked } from '@/lib/shoppingActions'
 import { fetchShoppingSuggestions, upsertShoppingSuggestion, type ShoppingSuggestion } from '@/lib/suggestions'
 import SuggestionNameInput from '@/components/items/SuggestionNameInput'
+import ConstrainedPageShell from '@/components/layout/ConstrainedPageShell'
 import { ChevronLeft, Trash2, Pencil } from 'lucide-react'
 
 const STORES: Store[] = ['Costco', 'Walmart', 'Albertsons', 'Any', 'Other']
@@ -200,25 +201,29 @@ export default function KitchenNotesView({ onBack }: Props) {
   }, {} as Partial<Record<Store, ShoppingItem[]>>)
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 paper">
-      <div className="px-5 pt-5 pb-2 border-b border-stone-400/40 shrink-0">
-        <button
-          type="button"
-          onClick={onBack}
-          className="flex items-center gap-2 -ml-2 py-2 pr-3 rounded-md active:bg-stone-200/80 font-mono text-sm tracking-[0.15em] uppercase text-stone-700"
-        >
-          <ChevronLeft size={22} strokeWidth={2.5} />
-          Back
-        </button>
-      </div>
+    <ConstrainedPageShell>
+      <div className="flex flex-1 flex-col min-h-0">
+        <div className="px-5 pt-5 pb-2 border-b border-stone-400/40 shrink-0">
+          <button
+            type="button"
+            onClick={onBack}
+            className="flex items-center gap-2 -ml-2 py-2 pr-3 rounded-md active:bg-stone-200/80 font-mono text-sm tracking-[0.15em] uppercase text-stone-700"
+          >
+            <ChevronLeft size={22} strokeWidth={2.5} />
+            Back
+          </button>
+          <h2 className="font-mono text-2xl tracking-tight text-stone-900 mt-1">
+            <span className="editorial-underline font-bold">Kitchen Notes</span>
+          </h2>
+        </div>
 
-      {error && (
-        <p className="mx-5 mt-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-          {error}
-        </p>
-      )}
+        {error && (
+          <p className="mx-5 mt-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+            {error}
+          </p>
+        )}
 
-      <div className="flex border-b border-slate-200 shrink-0">
+        <div className="flex border-b border-slate-200 shrink-0">
         {(['notes', 'shopping'] as Tab[]).map(t => (
           <button
             key={t}
@@ -405,6 +410,7 @@ export default function KitchenNotesView({ onBack }: Props) {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </ConstrainedPageShell>
   )
 }
