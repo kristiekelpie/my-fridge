@@ -15,13 +15,24 @@ export default function HomePage() {
   const [editItem, setEditItem] = useState<HouseholdItem | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [fetchError, setFetchError] = useState<string | null>(null)
 
   const fetchItems = useCallback(async () => {
-    const { data } = await supabase
+    if (!isSupabaseConfigured()) {
+      setLoading(false)
+      return
+    }
+    const { data, error } = await supabase
       .from('household_items')
       .select('*')
       .order('expiry_date', { ascending: true })
-    if (data) setItems(data)
+    if (error) {
+      console.error('Failed to load items:', error.message)
+      setFetchError(error.message)
+    } else {
+      setItems(data ?? [])
+      setFetchError(null)
+    }
     setLoading(false)
   }, [supabase])
 
@@ -62,27 +73,29 @@ export default function HomePage() {
 
   return (
     <div className="fixed inset-0 flex flex-col paper">
-      {/* Slim editorial top bar */}
-      <header className="flex items-center px-5 py-3 border-b border-stone-400/40 shrink-0">
-        <div className="font-mono text-[10px] tracking-[0.3em] uppercase text-stone-700">
-          The Kitchen Log
-        </div>
-        <div className="ml-auto">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="p-1.5 rounded-md active:bg-stone-200 border border-stone-300"
-            aria-label="Open menu"
-          >
-            <Menu size={18} className="text-stone-700" />
-          </button>
-        </div>
-      </header>
+      {/* Menu icon only — no banner */}
+      <button
+        onClick={() => setSidebarOpen(true)}
+        className="fixed z-40 p-2 text-stone-600 active:text-stone-900 active:scale-95 transition-transform"
+        style={{
+          top: 'max(0.5rem, env(safe-area-inset-top, 0px))',
+          right: 'max(0.5rem, env(safe-area-inset-right, 0px))',
+        }}
+        aria-label="Open menu"
+      >
+        <Menu size={22} strokeWidth={2} />
+      </button>
 
       {/* Main content */}
       <main className="flex-1 flex flex-col min-h-0 overflow-hidden">
         {!isSupabaseConfigured() && (
           <div className="shrink-0 mx-5 mt-3 px-3 py-2 bg-amber-50 border border-amber-300 rounded-lg font-mono text-[10px] text-amber-900 leading-snug">
             Supabase is not configured. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in Vercel → Settings → Environment Variables, then redeploy.
+          </div>
+        )}
+        {fetchError && (
+          <div className="shrink-0 mx-5 mt-3 px-3 py-2 bg-red-50 border border-red-300 rounded-lg font-mono text-[10px] text-red-900 leading-snug">
+            Could not load fridge items: {fetchError}
           </div>
         )}
         {loading ? (

@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { HouseholdItem, Location, getExpiryStatus } from '@/lib/types'
 import FridgeClosed from './FridgeClosed'
 import FridgeInteriorOpen from './FridgeInteriorOpen'
 import ZoneInterior from './ZoneInterior'
 import KitchenNotesView from '@/components/kitchen/KitchenNotesView'
-import { getLocalDoorPhotos, setLocalDoorPhoto, fileToResizedDataUrl, dataUrlToBlob, getSlotColumn } from '@/lib/doorPhotos'
+import { fetchDoorPhotoUrls, uploadDoorPhoto } from '@/lib/fridgeDoor'
 import { isSupabaseConfigured } from '@/lib/supabase/client'
 import type { PolaroidSlot } from './DoorPolaroid'
 
@@ -19,7 +19,7 @@ interface Props {
 
 const ALL_ZONES: Location[] = ['freezer', 'shelf1', 'shelf2', 'upper_drawer', 'shelf3', 'lower_drawer', 'door']
 
-const FRIDGE_HEIGHT_CLASS = 'h-[min(calc(100dvh-5rem),calc(100dvh-env(safe-area-inset-bottom)-5rem),680px)]'
+const FRIDGE_HEIGHT_CLASS = 'h-[min(calc(100dvh-2.5rem),calc(100dvh-env(safe-area-inset-bottom)-2.5rem),680px)]'
 
 export default function FridgeView({ items, onEdit, onDelete }: Props) {
   const supabase = createClient()
@@ -29,7 +29,6 @@ export default function FridgeView({ items, onEdit, onDelete }: Props) {
   const [upperPhotoUrl, setUpperPhotoUrl] = useState<string | null>(null)
   const [lowerPhotoUrl, setLowerPhotoUrl] = useState<string | null>(null)
   const [leftPhotoUrl, setLeftPhotoUrl] = useState<string | null>(null)
-  const fridgeRef = useRef<HTMLDivElement>(null)
 
   const itemCounts = ALL_ZONES.reduce((acc, zone) => {
     acc[zone] = items.filter(i => i.location === zone).length
@@ -50,28 +49,11 @@ export default function FridgeView({ items, onEdit, onDelete }: Props) {
   }, [])
 
   const fetchDoorPhotos = useCallback(async () => {
-    const local = getLocalDoorPhotos()
-    setUpperPhotoUrl(local.upper)
-    setLowerPhotoUrl(local.lower)
-    setLeftPhotoUrl(local.left)
-
-    if (!isSupabaseConfigured()) return
-
-    const { data, error } = await supabase
-      .from('fridge_door')
-      .select('upper_photo_url, lower_photo_url, left_photo_url')
-      .eq('id', 1)
-      .maybeSingle()
-
-    if (error) {
-      console.warn('fridge_door fetch:', error.message)
-      return
-    }
-
-    if (data?.upper_photo_url) setUpperPhotoUrl(data.upper_photo_url)
-    if (data?.lower_photo_url) setLowerPhotoUrl(data.lower_photo_url)
-    if (data?.left_photo_url) setLeftPhotoUrl(data.left_photo_url)
-  }, [supabase])
+    const urls = await fetchDoorPhotoUrls()
+    setUpperPhotoUrl(urls.upper)
+    setLowerPhotoUrl(urls.lower)
+    setLeftPhotoUrl(urls.left)
+  }, [])
 
   useEffect(() => {
     fetchDoorPhotos()
@@ -87,35 +69,8 @@ export default function FridgeView({ items, onEdit, onDelete }: Props) {
   }, [fetchDoorPhotos, supabase])
 
   async function handleUploadPolaroid(slot: PolaroidSlot, file: File) {
-    const dataUrl = await fileToResizedDataUrl(file)
-    setLocalDoorPhoto(slot, dataUrl)
-    setPhotoForSlot(slot, dataUrl)
-
-    if (!isSupabaseConfigured()) return
-
-    try {
-      const blob = await dataUrlToBlob(dataUrl)
-      const path = `door-${slot}-${Date.now()}.jpg`
-      const { error: uploadError } = await supabase.storage
-        .from('item-photos')
-        .upload(path, blob, { contentType: 'image/jpeg', upsert: false })
-      if (uploadError) throw uploadError
-
-      const { data: urlData } = supabase.storage.from('item-photos').getPublicUrl(path)
-      const publicUrl = urlData.publicUrl
-      const column = getSlotColumn(slot)
-
-      const { error: dbError } = await supabase
-        .from('fridge_door')
-        .upsert({ id: 1, [column]: publicUrl, updated_at: new Date().toISOString() }, { onConflict: 'id' })
-
-      if (dbError) throw dbError
-
-      setLocalDoorPhoto(slot, publicUrl)
-      setPhotoForSlot(slot, publicUrl)
-    } catch (err) {
-      console.warn('Polaroid cloud sync failed — kept local copy:', err)
-    }
+    const url = await uploadDoorPhoto(slot, file)
+    setPhotoForSlot(slot, url)
   }
 
   function handleZoneClick(zone: Location) {
@@ -130,10 +85,8 @@ export default function FridgeView({ items, onEdit, onDelete }: Props) {
     setIsOpen(false)
   }
 
-  const handleBackdropClick = useCallback((e: React.MouseEvent) => {
-    if (fridgeRef.current && !fridgeRef.current.contains(e.target as Node)) {
-      handleCloseFridge()
-    }
+  const handleBackdropClick = useCallback(() => {
+    handleCloseFridge()
   }, [])
 
   if (kitchenNotesOpen) {
@@ -155,24 +108,28 @@ export default function FridgeView({ items, onEdit, onDelete }: Props) {
 
   if (isOpen) {
     return (
-      <div
-        className="flex-1 flex flex-col min-h-0 paper overflow-hidden"
-        onClick={handleBackdropClick}
-      >
-        <p className="shrink-0 font-mono text-[10px] tracking-wider text-stone-500 text-center uppercase pt-2 pb-1 px-3">
+      <div className="flex-1 flex flex-col min-h-0 paper overflow-hidden">
+        <p
+          className="shrink-0 font-mono text-[10px] tracking-wider text-stone-500 text-center uppercase pt-2 pb-1 px-3 cursor-pointer"
+          onClick={handleCloseFridge}
+        >
           Tap a zone to view items
         </p>
 
-        <div className="flex-1 flex items-center justify-center min-h-0 w-full px-1">
+        <div
+          className="flex-1 flex items-center justify-center min-h-0 w-full px-2 cursor-pointer"
+          onClick={handleBackdropClick}
+        >
           <div
-            ref={fridgeRef}
-            className={`${FRIDGE_HEIGHT_CLASS} w-full max-w-[calc(100vw-0.5rem)] flex items-center justify-center`}
+            className={`${FRIDGE_HEIGHT_CLASS} w-auto max-w-[calc(100vw-1rem)] shrink-0 cursor-default`}
+            style={{ aspectRatio: '420 / 520' }}
+            onClick={(e) => e.stopPropagation()}
           >
             <FridgeInteriorOpen
               itemCounts={itemCounts}
               onZoneClick={handleZoneClick}
               activeZone={selectedZone}
-              className={`${FRIDGE_HEIGHT_CLASS} w-full max-w-full`}
+              className="h-full w-full"
             />
           </div>
         </div>
@@ -182,8 +139,8 @@ export default function FridgeView({ items, onEdit, onDelete }: Props) {
 
   return (
     <div className="flex-1 flex flex-col min-h-0 paper overflow-hidden">
-      <div className="flex-1 flex flex-col items-center justify-center min-h-0 px-3 py-2">
-        <div className="shrink-0 mb-1 text-center">
+      <div className="flex-1 flex flex-col items-center justify-center min-h-0 px-3 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2">
+        <div className="shrink-0 mb-1 text-center px-8">
           <p className="font-mono text-[10px] tracking-[0.25em] uppercase text-stone-500">
             Nic + Kris
           </p>
@@ -193,30 +150,50 @@ export default function FridgeView({ items, onEdit, onDelete }: Props) {
           </h1>
         </div>
 
+        {/* Mobile: tap hint + instock — visible in viewport */}
+        <div className="sm:hidden shrink-0 w-full max-w-[min(100%,240px)] mx-auto flex flex-nowrap items-center justify-between gap-1 mb-1 px-1">
+          <div className="flex flex-nowrap items-center gap-1 shrink-0">
+            <span className="font-mono text-stone-900 text-xs leading-none">✻</span>
+            <span className="font-mono text-[9px] font-bold tracking-wide text-stone-900 whitespace-nowrap">
+              TAP&nbsp;TO&nbsp;OPEN
+            </span>
+          </div>
+          <div className="border-2 border-stone-900 px-1.5 py-0.5 rounded-sm bg-stone-50/60 shrink-0">
+            <p className="font-mono text-[11px] font-bold tracking-tight text-stone-900 leading-none whitespace-nowrap">
+              instock<span aria-hidden>😊</span>
+            </p>
+            <p className="font-mono text-[7px] text-stone-600 tracking-wider text-center whitespace-nowrap">
+              {totalItems} ITEMS
+            </p>
+          </div>
+        </div>
+
         <div className="relative shrink-0">
+          {/* Desktop: in-stock stamp */}
           <div
-            className="absolute z-10 pointer-events-none"
+            className="hidden sm:block absolute z-10 pointer-events-none"
             style={{ top: '2%', left: '100%', marginLeft: '-0.5rem', transform: 'rotate(-4deg)' }}
           >
             <div className="border-2 border-stone-900 px-2 py-0.5 rounded-sm bg-stone-50/60">
-              <p className="font-mono text-lg font-bold tracking-tight text-stone-900 leading-none">
-                in stock <span className="inline-block">😊</span>
+              <p className="font-mono text-lg font-bold tracking-tight text-stone-900 leading-none whitespace-nowrap">
+                instock<span aria-hidden>😊</span>
               </p>
-              <p className="font-mono text-[8px] text-stone-600 tracking-wider text-center">
+              <p className="font-mono text-[8px] text-stone-600 tracking-wider text-center whitespace-nowrap">
                 {totalItems} ITEMS
               </p>
             </div>
           </div>
 
+          {/* Desktop: tap to open */}
           <div
-            className="absolute z-10 w-[72px] pointer-events-none"
+            className="hidden sm:block absolute z-10 pointer-events-none"
             style={{ top: '30%', right: '100%', marginRight: '0.35rem' }}
           >
-            <div className="flex gap-1 items-start">
-              <span className="font-mono text-stone-900 text-sm leading-none shrink-0">✻</span>
-              <p className="font-mono text-[10px] font-bold tracking-wider text-stone-900 leading-tight">
-                TAP TO OPEN
-              </p>
+            <div className="flex flex-nowrap items-center gap-1">
+              <span className="font-mono text-stone-900 text-sm leading-none">✻</span>
+              <span className="font-mono text-[10px] font-bold tracking-wide text-stone-900 whitespace-nowrap">
+                TAP&nbsp;TO&nbsp;OPEN
+              </span>
             </div>
             <svg width="64" height="40" viewBox="0 0 80 50" className="mt-0.5 ml-2">
               <path d="M 5 5 Q 30 5 40 20 T 75 35" stroke="#1A1A1A" strokeWidth="1.2" fill="none" strokeLinecap="round" />
@@ -226,7 +203,7 @@ export default function FridgeView({ items, onEdit, onDelete }: Props) {
 
           {(urgent > 0 || soon > 0) && (
             <div
-              className="absolute z-10 max-w-[96px] text-right pointer-events-none"
+              className="hidden sm:block absolute z-10 max-w-[96px] text-right pointer-events-none"
               style={{ bottom: '14%', left: '100%', marginLeft: '0.25rem' }}
             >
               <p className="font-mono text-[10px] font-bold tracking-wider text-stone-900 leading-tight">
@@ -242,6 +219,14 @@ export default function FridgeView({ items, onEdit, onDelete }: Props) {
                 <path d="M 10 33 L 4 38 L 10 43" stroke="#1A1A1A" strokeWidth="1.2" fill="none" strokeLinecap="round" />
               </svg>
             </div>
+          )}
+
+          {(urgent > 0 || soon > 0) && (
+            <p className="sm:hidden font-mono text-[8px] text-stone-700 text-center mb-1 whitespace-nowrap">
+              {urgent > 0 && <><span className="text-red-700 font-bold">{urgent}</span> expiring</>}
+              {urgent > 0 && soon > 0 && <span> · </span>}
+              {soon > 0 && <><span className="text-amber-700 font-bold">{soon}</span> soon</>}
+            </p>
           )}
 
           <FridgeClosed

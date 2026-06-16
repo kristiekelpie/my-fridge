@@ -37,18 +37,15 @@ alter table household_items enable row level security;
 alter table meal_notes enable row level security;
 alter table shopping_items enable row level security;
 
--- Public access policies (no login required)
+-- Public access policies (shared household — any device, no login required)
 create policy "Public can do everything on items"
-  on household_items for all to anon
-  using (true) with check (true);
+  on household_items for all using (true) with check (true);
 
 create policy "Public can do everything on meal notes"
-  on meal_notes for all to anon
-  using (true) with check (true);
+  on meal_notes for all using (true) with check (true);
 
 create policy "Public can do everything on shopping items"
-  on shopping_items for all to anon
-  using (true) with check (true);
+  on shopping_items for all using (true) with check (true);
 
 -- Enable Realtime on all tables
 alter publication supabase_realtime add table household_items;
@@ -61,20 +58,16 @@ values ('item-photos', 'item-photos', true)
 on conflict (id) do nothing;
 
 create policy "Anyone can upload photos"
-  on storage.objects for insert to anon
-  with check (bucket_id = 'item-photos');
+  on storage.objects for insert with check (bucket_id = 'item-photos');
 
 create policy "Photos are publicly readable"
-  on storage.objects for select to public
-  using (bucket_id = 'item-photos');
+  on storage.objects for select using (bucket_id = 'item-photos');
 
 create policy "Anyone can delete photos"
-  on storage.objects for delete to anon
-  using (bucket_id = 'item-photos');
+  on storage.objects for delete using (bucket_id = 'item-photos');
 
 create policy "Anyone can update photos"
-  on storage.objects for update to anon
-  using (bucket_id = 'item-photos');
+  on storage.objects for update using (bucket_id = 'item-photos');
 
 -- Trigger to auto-update updated_at
 create or replace function update_updated_at()
@@ -114,8 +107,7 @@ insert into fridge_door (id) values (1) on conflict (id) do nothing;
 alter table fridge_door enable row level security;
 
 create policy "Public can do everything on fridge_door"
-  on fridge_door for all to anon
-  using (true) with check (true);
+  on fridge_door for all using (true) with check (true);
 
 alter publication supabase_realtime add table fridge_door;
 

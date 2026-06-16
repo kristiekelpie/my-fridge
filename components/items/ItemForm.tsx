@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { createClient, isSupabaseConfigured } from '@/lib/supabase/client'
 import { HouseholdItem, Category, Location, CATEGORY_LABELS, LOCATION_LABELS } from '@/lib/types'
 import { Camera, Image as ImageIcon, Loader2, ChevronLeft } from 'lucide-react'
 
@@ -33,11 +33,15 @@ export default function ItemForm({ initialItem, defaultLocation, onSave, onClose
   async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
+    if (!isSupabaseConfigured()) {
+      setError('Supabase is not configured — photos cannot sync to other devices.')
+      return
+    }
     setUploading(true)
     setError(null)
     try {
-      const ext = file.name.split('.').pop()
-      const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+      const ext = file.name.split('.').pop() ?? 'jpg'
+      const path = `items/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
       const { error: uploadError } = await supabase.storage.from('item-photos').upload(path, file)
       if (uploadError) throw uploadError
       const { data } = supabase.storage.from('item-photos').getPublicUrl(path)
@@ -52,6 +56,10 @@ export default function ItemForm({ initialItem, defaultLocation, onSave, onClose
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!name.trim() || !expiryDate) return
+    if (!isSupabaseConfigured()) {
+      setError('Supabase is not configured — items cannot sync to other devices.')
+      return
+    }
     setSaving(true)
     setError(null)
 
