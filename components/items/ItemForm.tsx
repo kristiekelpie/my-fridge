@@ -146,9 +146,9 @@ export default function ItemForm({ initialItem, defaultLocation, storageArea, on
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col paper sm:px-4">
+    <div className="fixed inset-0 z-50 flex flex-col paper sm:items-center sm:px-4 sm:bg-stone-400/10">
       <div
-        className={`${DESKTOP_PAGE_COLUMN_CLASS} sm:max-h-[calc(100dvh-2rem)] sm:my-4 sm:rounded-2xl sm:border sm:border-stone-300/50 sm:shadow-lg sm:overflow-hidden bg-[var(--paper)]`}
+        className={`${DESKTOP_PAGE_COLUMN_CLASS} sm:max-h-[calc(100dvh-2rem)] sm:my-4 sm:rounded-2xl sm:border sm:border-stone-300/50 sm:shadow-lg sm:overflow-hidden`}
       >
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-stone-400/40 shrink-0">
