@@ -19,7 +19,9 @@ interface Props {
 }
 
 const FORM_FIELD =
-  'form-field border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500'
+  'w-full max-w-full min-w-0 box-border border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500'
+
+const FORM_CONTROL = `${FORM_FIELD} h-10`
 
 function getErrorMessage(err: unknown): string {
   if (err instanceof Error) return err.message
@@ -229,7 +231,7 @@ export default function ItemForm({ initialItem, defaultLocation, storageArea, on
             }}
             getSubLabel={s => `${CATEGORY_LABELS[s.category]} · ${LOCATION_LABELS[s.location]}`}
             placeholder="e.g. Chicken thighs"
-            inputClassName={`w-full min-w-0 ${FORM_FIELD}`}
+            inputClassName={FORM_CONTROL}
           />
         </div>
 
@@ -239,7 +241,7 @@ export default function ItemForm({ initialItem, defaultLocation, storageArea, on
           <select
             value={category}
             onChange={e => setCategory(e.target.value as Category)}
-            className={FORM_FIELD}
+            className={FORM_CONTROL}
           >
             {CATEGORIES.map(c => (
               <option key={c} value={c}>{CATEGORY_LABELS[c]}</option>
@@ -258,7 +260,7 @@ export default function ItemForm({ initialItem, defaultLocation, storageArea, on
               setExpiryDate(e.target.value)
             }}
             required
-            className={FORM_FIELD}
+            className={FORM_CONTROL}
           />
           {category === 'cooked_food' && !isEdit && (
             <p className="font-mono text-[10px] text-stone-500 mt-1">
@@ -276,7 +278,7 @@ export default function ItemForm({ initialItem, defaultLocation, storageArea, on
           <select
             value={location}
             onChange={e => setLocation(e.target.value as Location)}
-            className={FORM_FIELD}
+            className={FORM_CONTROL}
           >
             {locations.map(l => (
               <option key={l} value={l}>{LOCATION_LABELS[l]}</option>

@@ -91,6 +91,30 @@ body {
   box-sizing: border-box;
 }
 
+input[type="date"].form-field,
+input[type="date"] {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  -webkit-min-logical-width: 0;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+input[type="date"]::-webkit-date-and-time-value {
+  display: block;
+  min-width: 0;
+  width: 100%;
+  overflow: hidden;
+  text-align: left;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  margin-left: 0.25rem;
+  padding: 0;
+}
+
 .scrollbar-none {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -98,11 +122,4 @@ body {
 
 .scrollbar-none::-webkit-scrollbar {
   display: none;
-}
-
-input[type="date"].form-field {
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  -webkit-min-logical-width: 0;
 }

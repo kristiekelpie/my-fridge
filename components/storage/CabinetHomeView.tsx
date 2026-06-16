@@ -15,6 +15,7 @@ import {
   SwipeHint,
   TapToOpenDesktop,
   TapToOpenMobile,
+  TapToOpenWineMobile,
 } from './StorageStamps'
 
 interface Props {
@@ -69,7 +70,7 @@ export default function CabinetHomeView({
           {area === 'cupboard' ? (
             <div
               className="absolute z-20 -rotate-6"
-              style={{ top: '2%', right: '-0.25rem', transform: 'translate(8%, -10%) rotate(-6deg)' }}
+              style={{ top: '2%', right: '10%', transform: 'translateY(-10%) rotate(-6deg)' }}
             >
               <InstockStamp totalItems={totalItems} compact onClick={onOpenInventory} />
             </div>
@@ -87,13 +88,7 @@ export default function CabinetHomeView({
             </>
           )}
 
-          <TapToOpenMobile
-            style={
-              area === 'wine_fridge'
-                ? { top: '34%', left: '6%' }
-                : undefined
-            }
-          />
+          {area !== 'wine_fridge' && <TapToOpenMobile />}
           <TapToOpenDesktop />
           <SwipeHint show={showSwipeHint} />
 
@@ -118,9 +113,10 @@ export default function CabinetHomeView({
             <button
               type="button"
               onClick={() => setIsOpen(true)}
-              className="block w-fit mx-auto"
+              className="block w-fit mx-auto relative"
               aria-label={`Open ${STORAGE_AREA_HEADING[area]}`}
             >
+              {area === 'wine_fridge' && <TapToOpenWineMobile />}
               <CabinetClosed
                 area={area}
                 className={
@@ -136,13 +132,13 @@ export default function CabinetHomeView({
               <>
                 <div
                   className="hidden sm:block absolute z-20 left-1/2 -translate-x-1/2"
-                  style={{ top: '100%', marginTop: '0.15rem' }}
+                  style={{ top: '100%', marginTop: '-0.5rem' }}
                 >
                   <ExpiringStamp count={expiringCount} below onClick={onOpenExpiring} />
                 </div>
                 <div
                   className="sm:hidden absolute z-20 left-1/2 -translate-x-1/2"
-                  style={{ top: '100%', marginTop: '-0.45rem' }}
+                  style={{ top: '100%', marginTop: '-1.1rem' }}
                 >
                   <ExpiringStamp count={expiringCount} compact below onClick={onOpenExpiring} />
                 </div>

@@ -154,6 +154,25 @@ export function TapToOpenMobile({
   )
 }
 
+export function TapToOpenWineMobile() {
+  return (
+    <div
+      className="absolute z-10 pointer-events-none sm:hidden left-1/2 -translate-x-1/2"
+      style={{ top: '11%' }}
+    >
+      <div className="flex flex-col items-center -rotate-2">
+        <div className="grid grid-cols-[auto_1fr] gap-x-0.5 rounded-sm bg-stone-50/90 px-1 py-0.5 shadow-sm">
+          <span className="font-mono text-stone-900 text-[8px] leading-[1.1]">✻</span>
+          <span className="font-mono text-[8px] font-bold tracking-wide text-stone-900 leading-[1.1]">tap</span>
+          <span className="col-start-2 font-mono text-[8px] font-bold tracking-wide text-stone-900 leading-[1.1]">to</span>
+          <span className="col-start-2 font-mono text-[8px] font-bold tracking-wide text-stone-900 leading-[1.1]">open</span>
+        </div>
+        <HandDrawnArrow toward="right" compact className="mt-0.5 ml-2 scale-90" />
+      </div>
+    </div>
+  )
+}
+
 export function TapToOpenDesktop() {
   return (
     <div
@@ -225,4 +244,4 @@ export const CUPBOARD_HEIGHT_CLASS =
   'h-[min(calc((100dvh-6.5rem)*0.78),calc((100dvh-env(safe-area-inset-bottom)-6.5rem)*0.78),560px)] sm:h-[min(calc((100dvh-5rem)*0.7),calc((100dvh-env(safe-area-inset-bottom)-5rem)*0.7),448px)]'
 
 export const WINE_FRIDGE_HEIGHT_CLASS =
-  'h-[min(calc((100dvh-6.5rem)*0.72),calc((100dvh-env(safe-area-inset-bottom)-6.5rem)*0.72),520px)] sm:h-[min(calc((100dvh-5rem)*0.75),calc((100dvh-env(safe-area-inset-bottom)-5rem)*0.75),480px)]'
+  'h-[min(calc((100dvh-6.5rem)*0.62),calc((100dvh-env(safe-area-inset-bottom)-6.5rem)*0.62),440px)] sm:h-[min(calc((100dvh-5rem)*0.75),calc((100dvh-env(safe-area-inset-bottom)-5rem)*0.75),480px)]'

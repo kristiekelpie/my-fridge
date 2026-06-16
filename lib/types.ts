@@ -43,8 +43,11 @@ export type Store = 'Costco' | 'Walmart' | 'Albertsons' | 'Any' | 'Other'
 export type ShoppingCategory = 'food' | 'household' | 'personal'
 export type ExpiryStatus = 'fresh' | 'soon' | 'urgent' | 'expired'
 
-/** Items on the Expiring Soon page and stamp when expiry is within this many days (inclusive). */
-export const EXPIRING_SOON_DAYS = 3
+/** Items on the Expiring Soon page when expiry is within this many days (0 = today). */
+export const EXPIRING_SOON_DAYS = 4
+
+/** Red badge: today (0) through 2 days out. Yellow badge: 3–4 days out. */
+export const EXPIRY_URGENT_MAX_DAYS = 2
 
 /** Default cooked food shelf life when not in the freezer (days from today). */
 export const COOKED_FOOD_DAYS = 4
@@ -226,14 +229,15 @@ export function daysUntilExpiry(expiryDate: string): number {
 }
 
 export function isExpiringWithinDays(expiryDate: string, days: number = EXPIRING_SOON_DAYS): boolean {
-  return daysUntilExpiry(expiryDate) <= days
+  const diff = daysUntilExpiry(expiryDate)
+  return diff <= days
 }
 
 export function getExpiryStatus(expiryDate: string): ExpiryStatus {
   const diffDays = daysUntilExpiry(expiryDate)
 
   if (diffDays < 0) return 'expired'
-  if (diffDays <= 2) return 'urgent'
+  if (diffDays <= EXPIRY_URGENT_MAX_DAYS) return 'urgent'
   if (diffDays <= EXPIRING_SOON_DAYS) return 'soon'
   return 'fresh'
 }
@@ -242,7 +246,7 @@ export const EXPIRY_STATUS_CONFIG: Record<ExpiryStatus, { label: string; bg: str
   fresh: { label: 'Fresh', bg: 'bg-green-100', text: 'text-green-900', border: 'border-green-300' },
   soon: { label: 'Soon', bg: 'bg-amber-100', text: 'text-amber-900', border: 'border-amber-300' },
   urgent: { label: 'Urgent', bg: 'bg-red-100', text: 'text-red-900', border: 'border-red-300' },
-  expired: { label: 'Expired', bg: 'bg-red-100', text: 'text-red-900', border: 'border-red-300' },
+  expired: { label: 'Expired', bg: 'bg-stone-900', text: 'text-white', border: 'border-stone-900' },
 }
 
 export function groupItemsByCategory(items: HouseholdItem[]): { category: Category; items: HouseholdItem[] }[] {
