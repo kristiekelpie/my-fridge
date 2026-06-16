@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/client'
-import { HouseholdItem } from '@/lib/types'
+import { HouseholdItem, normalizeItem } from '@/lib/types'
 import FridgeView from '@/components/fridge/FridgeView'
 import ItemForm from '@/components/items/ItemForm'
 import Sidebar from '@/components/sidebar/Sidebar'
@@ -40,7 +40,7 @@ export default function HomePage() {
         console.error('Failed to load items:', error.message)
         setFetchError(error.message)
       } else {
-        setItems(data ?? [])
+        setItems((data ?? []).map(normalizeItem))
         setFetchError(null)
       }
     } catch (err) {

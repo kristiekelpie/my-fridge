@@ -11,7 +11,7 @@ create table if not exists household_items (
   created_at timestamptz default now() not null,
   updated_at timestamptz default now() not null,
   name text not null,
-  category text not null check (category in ('meat', 'vegetables', 'dairy', 'jarred_sauces', 'drinks', 'other')),
+  category text not null check (category in ('protein', 'vegetables', 'dairy', 'sauces', 'starch', 'cooked_food', 'fruits', 'condiments', 'drinks', 'other')),
   expiry_date date not null,
   location text not null check (location in ('freezer', 'shelf1', 'shelf2', 'upper_drawer', 'shelf3', 'lower_drawer', 'door')),
   photo_url text,
@@ -36,6 +36,29 @@ create table if not exists shopping_items (
   checked boolean default false not null
 );
 
+create table if not exists fridge_item_suggestions (
+  id uuid default gen_random_uuid() primary key,
+  name text not null,
+  name_normalized text not null unique,
+  category text not null check (category in ('protein', 'vegetables', 'dairy', 'sauces', 'starch', 'cooked_food', 'fruits', 'condiments', 'drinks', 'other')),
+  location text not null check (location in ('freezer', 'shelf1', 'shelf2', 'upper_drawer', 'shelf3', 'lower_drawer', 'door')),
+  notes text,
+  use_count int not null default 1,
+  last_used_at timestamptz default now() not null,
+  created_at timestamptz default now() not null
+);
+
+create table if not exists shopping_suggestions (
+  id uuid default gen_random_uuid() primary key,
+  name text not null,
+  name_normalized text not null unique,
+  store text check (store in ('Costco', 'Walmart', 'Albertsons', 'Any', 'Other')),
+  category text not null default 'food' check (category in ('food', 'household', 'personal')),
+  use_count int not null default 1,
+  last_used_at timestamptz default now() not null,
+  created_at timestamptz default now() not null
+);
+
 create table if not exists fridge_door (
   id int primary key default 1 check (id = 1),
   upper_photo_url text,
@@ -53,6 +76,8 @@ insert into fridge_door (id) values (1) on conflict (id) do nothing;
 alter table household_items enable row level security;
 alter table meal_notes enable row level security;
 alter table shopping_items enable row level security;
+alter table fridge_item_suggestions enable row level security;
+alter table shopping_suggestions enable row level security;
 alter table fridge_door enable row level security;
 
 drop policy if exists "Public can do everything on items" on household_items;
@@ -66,6 +91,14 @@ create policy "Public can do everything on meal notes"
 drop policy if exists "Public can do everything on shopping items" on shopping_items;
 create policy "Public can do everything on shopping items"
   on shopping_items for all using (true) with check (true);
+
+drop policy if exists "Public can do everything on fridge suggestions" on fridge_item_suggestions;
+create policy "Public can do everything on fridge suggestions"
+  on fridge_item_suggestions for all using (true) with check (true);
+
+drop policy if exists "Public can do everything on shopping suggestions" on shopping_suggestions;
+create policy "Public can do everything on shopping suggestions"
+  on shopping_suggestions for all using (true) with check (true);
 
 drop policy if exists "Public can do everything on fridge_door" on fridge_door;
 create policy "Public can do everything on fridge_door"

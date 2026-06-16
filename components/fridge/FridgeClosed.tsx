@@ -2,11 +2,14 @@
 
 import DoorPolaroid, { PolaroidSlot } from './DoorPolaroid'
 import DoorNotesPaper from './DoorNotesPaper'
-import { MagneticPhrase, HELLO_CHEF_LETTERS, I_LOVE_YOU_LETTERS } from './MagneticLetters'
+import { MagneticPhrase, HELLO_CHEF_LETTERS, I_LOVE_YOU_LETTERS, I_LOVE_YOU_LETTERS_MOBILE } from './MagneticLetters'
+import type { MealNote, ShoppingItem } from '@/lib/types'
 
 interface Props {
   onOpen: () => void
   onOpenNotes: () => void
+  notes: MealNote[]
+  shopping: ShoppingItem[]
   upperPhotoUrl: string | null
   lowerPhotoUrl: string | null
   leftPhotoUrl: string | null
@@ -17,6 +20,8 @@ interface Props {
 export default function FridgeClosed({
   onOpen,
   onOpenNotes,
+  notes,
+  shopping,
   upperPhotoUrl,
   lowerPhotoUrl,
   leftPhotoUrl,
@@ -45,6 +50,19 @@ export default function FridgeClosed({
             <stop offset="0%" stopColor="#FDFDFB" />
             <stop offset="100%" stopColor="#F6F6F4" />
           </linearGradient>
+          <linearGradient id="doorSheen" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="52%" stopColor="#FFFFFF" stopOpacity="0" />
+            <stop offset="64%" stopColor="#FFFFFF" stopOpacity="0.18" />
+            <stop offset="70%" stopColor="#FFFFFF" stopOpacity="0.55" />
+            <stop offset="76%" stopColor="#FFFFFF" stopOpacity="0.18" />
+            <stop offset="88%" stopColor="#FFFFFF" stopOpacity="0" />
+          </linearGradient>
+          <linearGradient id="edgeSheen" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="86%" stopColor="#FFFFFF" stopOpacity="0" />
+            <stop offset="92%" stopColor="#FFFFFF" stopOpacity="0.22" />
+            <stop offset="96%" stopColor="#FFFFFF" stopOpacity="0.08" />
+            <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+          </linearGradient>
         </defs>
 
         {/* Cabinet shell */}
@@ -53,6 +71,8 @@ export default function FridgeClosed({
 
         {/* Freezer door — ~30% */}
         <rect x="14" y="10" width="192" height="144" rx="10" fill="url(#doorFace)" stroke="#D4D4D4" strokeWidth="1" />
+        <rect x="14" y="10" width="192" height="144" rx="10" fill="url(#doorSheen)" />
+        <rect x="14" y="10" width="192" height="144" rx="10" fill="url(#edgeSheen)" />
 
         {/* Door seam */}
         <rect x="14" y="154" width="192" height="1" fill="#D6D6D4" />
@@ -69,6 +89,8 @@ export default function FridgeClosed({
 
         {/* Fridge door — ~70% */}
         <rect x="14" y="172" width="192" height="316" rx="10" fill="url(#doorFace)" stroke="#D4D4D4" strokeWidth="1" />
+        <rect x="14" y="172" width="192" height="316" rx="10" fill="url(#doorSheen)" />
+        <rect x="14" y="172" width="192" height="316" rx="10" fill="url(#edgeSheen)" />
 
         {/* Kickplate grille */}
         <rect x="14" y="490" width="192" height="18" rx="3" fill="#F0F0EE" stroke="#D8D8D6" strokeWidth="0.5" />
@@ -136,7 +158,9 @@ export default function FridgeClosed({
         {/* Lined notes paper */}
         <DoorNotesPaper
           onClick={onOpenNotes}
-          className="top-[18%] left-[70%] sm:left-[58%] -rotate-6"
+          notes={notes}
+          shopping={shopping}
+          className="top-[16%] left-[60%] sm:left-[52%] -rotate-6"
         />
 
         {/* Lower polaroid on fridge door */}
@@ -147,7 +171,8 @@ export default function FridgeClosed({
           magnetCorner="top-right"
           style={{ top: '52%', left: '50%', transform: 'translateX(-50%) rotate(4deg)' }}
         />
-        <MagneticPhrase letters={I_LOVE_YOU_LETTERS} />
+        <MagneticPhrase letters={I_LOVE_YOU_LETTERS} className="hidden sm:block" />
+        <MagneticPhrase letters={I_LOVE_YOU_LETTERS_MOBILE} className="sm:hidden" />
       </div>
     </div>
   )

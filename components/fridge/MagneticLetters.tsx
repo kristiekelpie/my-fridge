@@ -104,12 +104,24 @@ export const HELLO_CHEF_LETTERS: LetterPlacement[] = [
 
 /** Fridge door — layered on lower polaroid, bottom left, tight spacing */
 export const I_LOVE_YOU_LETTERS: LetterPlacement[] = [
-  { char: 'i', left: '22%', top: '68%', rotate: -2 },
-  { char: 'l', left: '27%', top: '68%', rotate: 1 },
-  { char: 'o', left: '32%', top: '69%', rotate: -1 },
-  { char: 'v', left: '37%', top: '68%', rotate: 2 },
-  { char: 'e', left: '42%', top: '69%', rotate: -1 },
+  { char: 'i', left: '22%', top: '71%', rotate: -2 },
+  { char: 'l', left: '27%', top: '71%', rotate: 1 },
+  { char: 'o', left: '32%', top: '72%', rotate: -1 },
+  { char: 'v', left: '37%', top: '71%', rotate: 2 },
+  { char: 'e', left: '42%', top: '72%', rotate: -1 },
   { char: 'y', left: '24%', top: '78%', rotate: 2 },
   { char: 'o', left: '29%', top: '79%', rotate: -2 },
   { char: 'u', left: '34%', top: '78%', rotate: 1 },
+]
+
+/** Mobile — pull "i love" row down closer to "you", shifted up-left on small screens */
+export const I_LOVE_YOU_LETTERS_MOBILE: LetterPlacement[] = [
+  { char: 'i', left: '16%', top: '70%', rotate: -2 },
+  { char: 'l', left: '21%', top: '70%', rotate: 1 },
+  { char: 'o', left: '26%', top: '71%', rotate: -1 },
+  { char: 'v', left: '31%', top: '70%', rotate: 2 },
+  { char: 'e', left: '36%', top: '71%', rotate: -1 },
+  { char: 'y', left: '18%', top: '75%', rotate: 2 },
+  { char: 'o', left: '23%', top: '76%', rotate: -2 },
+  { char: 'u', left: '28%', top: '75%', rotate: 1 },
 ]

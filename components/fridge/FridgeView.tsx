@@ -2,10 +2,11 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { HouseholdItem, Location, getExpiryStatus } from '@/lib/types'
+import { HouseholdItem, Location, MealNote, ShoppingItem, isExpiringWithinDays } from '@/lib/types'
 import FridgeClosed from './FridgeClosed'
 import FridgeInteriorOpen from './FridgeInteriorOpen'
 import ZoneInterior from './ZoneInterior'
+import ItemListByCategory from './ItemListByCategory'
 import KitchenNotesView from '@/components/kitchen/KitchenNotesView'
 import { fetchDoorPhotoUrls, uploadDoorPhoto } from '@/lib/fridgeDoor'
 import { isSupabaseConfigured } from '@/lib/supabase/client'
@@ -22,34 +23,100 @@ const ALL_ZONES: Location[] = ['freezer', 'shelf1', 'shelf2', 'upper_drawer', 's
 const FRIDGE_HEIGHT_CLASS =
   'h-[min(calc(100dvh-6rem),calc(100dvh-env(safe-area-inset-bottom)-6rem),600px)] sm:h-[min(calc(100dvh-2.5rem),calc(100dvh-env(safe-area-inset-bottom)-2.5rem),680px)]'
 
-function InstockStamp({ totalItems, compact = false }: { totalItems: number; compact?: boolean }) {
+type ListView = 'instock' | 'expiring'
+
+function InstockStamp({
+  totalItems,
+  compact = false,
+  onClick,
+}: {
+  totalItems: number
+  compact?: boolean
+  onClick: () => void
+}) {
   return (
-    <div className={`border-2 border-stone-900 rounded-sm bg-stone-50/60 ${compact ? 'px-1.5 py-0.5' : 'px-2 py-0.5'}`}>
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation()
+        onClick()
+      }}
+      className={`border-2 border-stone-900 rounded-sm bg-stone-50/60 active:scale-[0.98] transition-transform cursor-pointer ${compact ? 'px-1.5 py-0.5' : 'px-2 py-0.5'}`}
+      aria-label="View inventory"
+    >
       <p className={`font-mono font-bold tracking-tight text-stone-900 leading-none whitespace-nowrap ${compact ? 'text-[11px]' : 'text-lg'}`}>
         instock <span aria-hidden>😊</span>
       </p>
       <p className={`font-mono text-stone-600 tracking-wider text-center whitespace-nowrap ${compact ? 'text-[7px]' : 'text-[8px]'}`}>
         {totalItems} ITEMS
       </p>
-    </div>
+    </button>
   )
 }
 
-/** Mobile: stacked label on left of fridge */
+function ExpiringStamp({
+  count,
+  compact = false,
+  onClick,
+}: {
+  count: number
+  compact?: boolean
+  onClick: () => void
+}) {
+  if (count <= 0) return null
+
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation()
+        onClick()
+      }}
+      className={`active:scale-[0.98] transition-transform cursor-pointer ${compact ? 'text-right max-w-[72px]' : 'text-left max-w-[96px]'}`}
+      aria-label="View expiring items"
+    >
+      <p className={`font-mono font-bold tracking-wider text-stone-900 leading-tight ${compact ? 'text-[8px]' : 'text-[10px]'}`}>
+        EXPIRING
+      </p>
+      <p className={`font-mono text-stone-700 mt-0.5 leading-snug ${compact ? 'text-[7px]' : 'text-[9px]'}`}>
+        <span className="text-amber-700 font-bold">{count}</span>
+      </p>
+      {!compact && (
+        <svg width="64" height="36" viewBox="0 0 80 46" className="mt-0.5 ml-auto hidden sm:block">
+          <path d="M 75 5 Q 50 5 40 22 T 5 38" stroke="#1A1A1A" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+          <path d="M 10 33 L 4 38 L 10 43" stroke="#1A1A1A" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+        </svg>
+      )}
+      {compact && (
+        <svg width="48" height="32" viewBox="0 0 80 46" className="mt-0.5 mr-auto ml-0">
+          <path d="M 75 5 Q 50 5 40 22 T 5 38" stroke="#1A1A1A" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+          <path d="M 10 33 L 4 38 L 10 43" stroke="#1A1A1A" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+        </svg>
+      )}
+    </button>
+  )
+}
+
+/** Mobile: stacked label on left of fridge — aligned with door handle */
 function TapToOpenMobile() {
   return (
-    <div className="absolute z-10 pointer-events-none sm:hidden" style={{ top: '33%', left: '0' }}>
-      <p className="font-mono text-[9px] font-bold tracking-wide text-stone-900 leading-[1.15] -rotate-6">
-        tap
-        <br />
-        to
-        <br />
-        open
-      </p>
-      <svg width="44" height="36" viewBox="0 0 56 44" className="mt-0.5 ml-2">
-        <path d="M 4 8 Q 22 6 32 18 T 48 32" stroke="#1A1A1A" strokeWidth="1.2" fill="none" strokeLinecap="round" />
-        <path d="M 43 27 L 50 32 L 43 37" stroke="#1A1A1A" strokeWidth="1.2" fill="none" strokeLinecap="round" />
-      </svg>
+    <div className="absolute z-10 pointer-events-none sm:hidden" style={{ top: '29%', left: '-22%' }}>
+      <div className="flex items-start gap-0.5 -rotate-6">
+        <span className="font-mono text-stone-900 text-[10px] leading-none mt-0.5">✻</span>
+        <div>
+          <p className="font-mono text-[9px] font-bold tracking-wide text-stone-900 leading-[1.15]">
+            tap
+            <br />
+            to
+            <br />
+            open
+          </p>
+          <svg width="44" height="36" viewBox="0 0 56 44" className="mt-0.5 ml-3">
+            <path d="M 4 8 Q 22 6 32 18 T 48 32" stroke="#1A1A1A" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+            <path d="M 43 27 L 50 32 L 43 37" stroke="#1A1A1A" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+          </svg>
+        </div>
+      </div>
     </div>
   )
 }
@@ -80,9 +147,12 @@ export default function FridgeView({ items, onEdit, onDelete }: Props) {
   const [isOpen, setIsOpen] = useState(false)
   const [selectedZone, setSelectedZone] = useState<Location | null>(null)
   const [kitchenNotesOpen, setKitchenNotesOpen] = useState(false)
+  const [listView, setListView] = useState<ListView | null>(null)
   const [upperPhotoUrl, setUpperPhotoUrl] = useState<string | null>(null)
   const [lowerPhotoUrl, setLowerPhotoUrl] = useState<string | null>(null)
   const [leftPhotoUrl, setLeftPhotoUrl] = useState<string | null>(null)
+  const [notes, setNotes] = useState<MealNote[]>([])
+  const [shopping, setShopping] = useState<ShoppingItem[]>([])
 
   const itemCounts = ALL_ZONES.reduce((acc, zone) => {
     acc[zone] = items.filter(i => i.location === zone).length
@@ -90,11 +160,8 @@ export default function FridgeView({ items, onEdit, onDelete }: Props) {
   }, {} as Partial<Record<Location, number>>)
 
   const totalItems = items.length
-  const urgent = items.filter(i => {
-    const s = getExpiryStatus(i.expiry_date)
-    return s === 'urgent' || s === 'expired'
-  }).length
-  const soon = items.filter(i => getExpiryStatus(i.expiry_date) === 'soon').length
+  const expiringItems = items.filter(i => isExpiringWithinDays(i.expiry_date, 3))
+  const expiringCount = expiringItems.length
 
   const setPhotoForSlot = useCallback((slot: PolaroidSlot, url: string | null) => {
     if (slot === 'upper') setUpperPhotoUrl(url)
@@ -109,18 +176,52 @@ export default function FridgeView({ items, onEdit, onDelete }: Props) {
     setLeftPhotoUrl(urls.left)
   }, [])
 
+  const fetchNotes = useCallback(async () => {
+    if (!isSupabaseConfigured()) return
+    const { data } = await supabase
+      .from('meal_notes')
+      .select('*')
+      .order('created_at', { ascending: false })
+    if (data) setNotes(data)
+  }, [supabase])
+
+  const fetchShopping = useCallback(async () => {
+    if (!isSupabaseConfigured()) return
+    const { data } = await supabase
+      .from('shopping_items')
+      .select('*')
+      .order('created_at', { ascending: false })
+    if (data) setShopping(data.map(row => ({ ...row, category: row.category ?? 'food' })))
+  }, [supabase])
+
   useEffect(() => {
     fetchDoorPhotos()
+    fetchNotes()
+    fetchShopping()
 
     if (!isSupabaseConfigured()) return
 
-    const channel = supabase
+    const doorChannel = supabase
       .channel('fridge-door-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'fridge_door' }, fetchDoorPhotos)
       .subscribe()
 
-    return () => { supabase.removeChannel(channel) }
-  }, [fetchDoorPhotos, supabase])
+    const notesChannel = supabase
+      .channel('fridge-paper-notes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'meal_notes' }, fetchNotes)
+      .subscribe()
+
+    const shoppingChannel = supabase
+      .channel('fridge-paper-shopping')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'shopping_items' }, fetchShopping)
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(doorChannel)
+      supabase.removeChannel(notesChannel)
+      supabase.removeChannel(shoppingChannel)
+    }
+  }, [fetchDoorPhotos, fetchNotes, fetchShopping, supabase])
 
   async function handleUploadPolaroid(slot: PolaroidSlot, file: File) {
     const url = await uploadDoorPhoto(slot, file)
@@ -145,6 +246,32 @@ export default function FridgeView({ items, onEdit, onDelete }: Props) {
 
   if (kitchenNotesOpen) {
     return <KitchenNotesView onBack={() => setKitchenNotesOpen(false)} />
+  }
+
+  if (listView === 'instock') {
+    return (
+      <ItemListByCategory
+        title="Inventory"
+        subtitle={`${totalItems} item${totalItems !== 1 ? 's' : ''} — grouped by category`}
+        items={items}
+        onBack={() => setListView(null)}
+        onEdit={onEdit}
+        onDelete={onDelete}
+      />
+    )
+  }
+
+  if (listView === 'expiring') {
+    return (
+      <ItemListByCategory
+        title="Expiring Soon"
+        subtitle={`${expiringCount} item${expiringCount !== 1 ? 's' : ''} — grouped by category`}
+        items={expiringItems}
+        onBack={() => setListView(null)}
+        onEdit={onEdit}
+        onDelete={onDelete}
+      />
+    )
   }
 
   if (selectedZone) {
@@ -194,7 +321,7 @@ export default function FridgeView({ items, onEdit, onDelete }: Props) {
   return (
     <div className="flex-1 flex flex-col min-h-0 paper overflow-hidden">
       <div className="flex-1 flex flex-col items-center justify-center min-h-0 px-3 sm:px-6 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2 overflow-x-hidden sm:overflow-visible">
-        <div className="shrink-0 mb-1 text-center px-8">
+        <div className="shrink-0 mb-1 text-center px-4 sm:px-8">
           <p className="font-mono text-[10px] tracking-[0.25em] uppercase text-stone-500">
             Nic + Kris
           </p>
@@ -204,58 +331,50 @@ export default function FridgeView({ items, onEdit, onDelete }: Props) {
           </h1>
         </div>
 
-        {/* Wrapper hugs fridge width on desktop so side labels sit adjacent */}
-        <div className="relative shrink-0 mx-auto w-full max-w-[min(100%,280px)] sm:w-fit sm:max-w-none px-8 sm:px-0 overflow-visible">
-          {/* Mobile: instock on upper freezer */}
+        {/* Wrapper — centred on mobile, side labels adjacent on desktop */}
+        <div className="relative shrink-0 mx-auto w-fit max-w-full overflow-visible">
+          {/* Mobile: instock overlapping upper-right of freezer */}
           <div
-            className="absolute z-10 pointer-events-none sm:hidden -rotate-6"
-            style={{ top: '4%', right: '-4%' }}
+            className="absolute z-20 sm:hidden -rotate-6"
+            style={{ top: '3%', left: '76%' }}
           >
-            <InstockStamp totalItems={totalItems} compact />
+            <InstockStamp totalItems={totalItems} compact onClick={() => setListView('instock')} />
           </div>
 
           {/* Desktop: instock off right edge */}
           <div
-            className="hidden sm:block absolute z-10 pointer-events-none"
+            className="hidden sm:block absolute z-10"
             style={{ top: '2%', left: '100%', marginLeft: '-0.5rem', transform: 'rotate(-4deg)' }}
           >
-            <InstockStamp totalItems={totalItems} />
+            <InstockStamp totalItems={totalItems} onClick={() => setListView('instock')} />
           </div>
 
           <TapToOpenMobile />
           <TapToOpenDesktop />
 
-          {(urgent > 0 || soon > 0) && (
+          {expiringCount > 0 && (
             <div
-              className="hidden sm:block absolute z-10 max-w-[96px] text-right pointer-events-none"
+              className="hidden sm:block absolute z-10"
               style={{ bottom: '14%', left: '100%', marginLeft: '0.25rem' }}
             >
-              <p className="font-mono text-[10px] font-bold tracking-wider text-stone-900 leading-tight">
-                EXPIRING
-              </p>
-              <p className="font-mono text-[9px] text-stone-700 mt-0.5 leading-snug">
-                {urgent > 0 && <><span className="text-red-700 font-bold">{urgent}</span> urgent</>}
-                {urgent > 0 && soon > 0 && <span>, </span>}
-                {soon > 0 && <><span className="text-amber-700 font-bold">{soon}</span> soon</>}
-              </p>
-              <svg width="64" height="36" viewBox="0 0 80 46" className="mt-0.5 ml-auto">
-                <path d="M 75 5 Q 50 5 40 22 T 5 38" stroke="#1A1A1A" strokeWidth="1.2" fill="none" strokeLinecap="round" />
-                <path d="M 10 33 L 4 38 L 10 43" stroke="#1A1A1A" strokeWidth="1.2" fill="none" strokeLinecap="round" />
-              </svg>
+              <ExpiringStamp count={expiringCount} onClick={() => setListView('expiring')} />
             </div>
           )}
 
-          {(urgent > 0 || soon > 0) && (
-            <p className="sm:hidden absolute z-10 pointer-events-none font-mono text-[8px] text-stone-700 whitespace-nowrap -bottom-4 left-1/2 -translate-x-1/2">
-              {urgent > 0 && <><span className="text-red-700 font-bold">{urgent}</span> expiring</>}
-              {urgent > 0 && soon > 0 && <span> · </span>}
-              {soon > 0 && <><span className="text-amber-700 font-bold">{soon}</span> soon</>}
-            </p>
+          {expiringCount > 0 && (
+            <div
+              className="sm:hidden absolute z-10"
+              style={{ bottom: '22%', left: '100%', marginLeft: '0.15rem' }}
+            >
+              <ExpiringStamp count={expiringCount} compact onClick={() => setListView('expiring')} />
+            </div>
           )}
 
           <FridgeClosed
             onOpen={() => setIsOpen(true)}
             onOpenNotes={() => setKitchenNotesOpen(true)}
+            notes={notes}
+            shopping={shopping}
             upperPhotoUrl={upperPhotoUrl}
             lowerPhotoUrl={lowerPhotoUrl}
             leftPhotoUrl={leftPhotoUrl}
@@ -263,10 +382,6 @@ export default function FridgeView({ items, onEdit, onDelete }: Props) {
             className={FRIDGE_HEIGHT_CLASS}
           />
         </div>
-
-        <p className="shrink-0 mt-3 sm:mt-2 text-center font-mono text-[10px] tracking-[0.25em] uppercase text-stone-500 px-4">
-          tap +<span className="text-stone-400"> to add something fresh</span>
-        </p>
       </div>
     </div>
   )

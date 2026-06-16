@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { ShoppingItem } from '@/lib/types'
+import type { ShoppingItem, Category } from '@/lib/types'
+import { upsertFridgeSuggestion } from '@/lib/suggestions'
 
 /** When a FOOD item is checked off, add it to the master fridge inventory. */
 export async function addPurchasedFoodToInventory(
@@ -9,13 +10,19 @@ export async function addPurchasedFoodToInventory(
   const expiry = new Date()
   expiry.setDate(expiry.getDate() + 7)
 
-  const { error } = await supabase.from('household_items').insert({
+  const payload = {
     name: name.trim(),
-    category: 'other',
+    category: 'other' as Category,
     expiry_date: expiry.toISOString().slice(0, 10),
-    location: 'shelf1',
+    location: 'shelf1' as const,
     notes: 'Added from shopping list',
-  })
+  }
+
+  const { error } = await supabase.from('household_items').insert(payload)
+
+  if (!error) {
+    await upsertFridgeSuggestion(supabase, payload)
+  }
 
   return { error: error?.message ?? null }
 }

@@ -1,8 +1,10 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/client'
-import { HouseholdItem, Category, Location, CATEGORY_LABELS, LOCATION_LABELS } from '@/lib/types'
+import { HouseholdItem, Category, Location, CATEGORY_LABELS, LOCATION_LABELS, CATEGORIES, normalizeCategory } from '@/lib/types'
+import { fetchFridgeSuggestions, upsertFridgeSuggestion, type FridgeItemSuggestion } from '@/lib/suggestions'
+import SuggestionNameInput from '@/components/items/SuggestionNameInput'
 import { Camera, Image as ImageIcon, Loader2, ChevronLeft } from 'lucide-react'
 
 interface Props {
@@ -12,13 +14,14 @@ interface Props {
   onClose: () => void
 }
 
-const CATEGORIES: Category[] = ['meat', 'vegetables', 'dairy', 'jarred_sauces', 'drinks', 'other']
 const LOCATIONS: Location[] = ['freezer', 'shelf1', 'shelf2', 'upper_drawer', 'shelf3', 'lower_drawer', 'door']
 
 export default function ItemForm({ initialItem, defaultLocation, onSave, onClose }: Props) {
   const supabase = createClient()
   const [name, setName] = useState(initialItem?.name ?? '')
-  const [category, setCategory] = useState<Category>(initialItem?.category ?? 'other')
+  const [category, setCategory] = useState<Category>(
+    initialItem?.category ? normalizeCategory(initialItem.category) : 'other'
+  )
   const [expiryDate, setExpiryDate] = useState(initialItem?.expiry_date ?? '')
   const [location, setLocation] = useState<Location>(initialItem?.location ?? defaultLocation ?? 'shelf1')
   const [notes, setNotes] = useState(initialItem?.notes ?? '')
@@ -26,9 +29,20 @@ export default function ItemForm({ initialItem, defaultLocation, onSave, onClose
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [suggestions, setSuggestions] = useState<FridgeItemSuggestion[]>([])
   const fileRef = useRef<HTMLInputElement>(null)
 
   const isEdit = !!initialItem?.id
+
+  const loadSuggestions = useCallback(async () => {
+    if (!isSupabaseConfigured()) return
+    const data = await fetchFridgeSuggestions(supabase)
+    setSuggestions(data)
+  }, [supabase])
+
+  useEffect(() => {
+    loadSuggestions()
+  }, [loadSuggestions])
 
   async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -85,6 +99,8 @@ export default function ItemForm({ initialItem, defaultLocation, onSave, onClose
           .insert(payload)
         if (error) throw error
       }
+
+      await upsertFridgeSuggestion(supabase, payload)
       onSave()
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Save failed')
@@ -160,13 +176,19 @@ export default function ItemForm({ initialItem, defaultLocation, onSave, onClose
         {/* Name */}
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">Name *</label>
-          <input
-            type="text"
+          <SuggestionNameInput
             value={name}
-            onChange={e => setName(e.target.value)}
-            required
+            onChange={setName}
+            suggestions={suggestions}
+            onSelectSuggestion={s => {
+              setName(s.name)
+              setCategory(s.category)
+              setLocation(s.location)
+              setNotes(s.notes ?? '')
+            }}
+            getSubLabel={s => `${CATEGORY_LABELS[s.category]} · ${LOCATION_LABELS[s.location]}`}
             placeholder="e.g. Chicken thighs"
-            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
+            inputClassName="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
           />
         </div>
 

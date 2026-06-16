@@ -1,14 +1,36 @@
 'use client'
 
+import { MealNote, ShoppingItem } from '@/lib/types'
 import HeartMagnet from './HeartMagnet'
 
 interface Props {
   onClick: () => void
+  notes: MealNote[]
+  shopping: ShoppingItem[]
   className?: string
   style?: React.CSSProperties
 }
 
-export default function DoorNotesPaper({ onClick, className = '', style }: Props) {
+const MAX_NOTES = 2
+const MAX_SHOP = 4
+
+function truncateLine(text: string, max: number) {
+  const line = text.trim().split('\n')[0]?.trim() ?? ''
+  if (line.length <= max) return line
+  return `${line.slice(0, max - 1)}…`
+}
+
+function noteFirstLine(note: MealNote) {
+  const title = note.title.trim()
+  if (title) return title
+  return note.content.trim().split('\n')[0]?.trim() ?? ''
+}
+
+export default function DoorNotesPaper({ onClick, notes, shopping, className = '', style }: Props) {
+  const notePreview = notes.slice(0, MAX_NOTES)
+  const unchecked = shopping.filter(i => !i.checked)
+  const shopPreview = unchecked.slice(0, MAX_SHOP)
+
   return (
     <button
       type="button"
@@ -28,7 +50,7 @@ export default function DoorNotesPaper({ onClick, className = '', style }: Props
           <HeartMagnet />
         </div>
         <div
-          className="w-[3.75rem] sm:w-[4.25rem] h-[5rem] sm:h-[5.5rem] bg-white shadow-[2px_4px_10px_rgba(0,0,0,0.15)] pt-4 px-1"
+          className="w-[6rem] sm:w-[6.75rem] h-[9.5rem] sm:h-[10rem] bg-white shadow-[2px_4px_10px_rgba(0,0,0,0.15)] pt-4 px-1.5 pb-1.5 overflow-hidden"
           style={{
             backgroundImage: `repeating-linear-gradient(
               transparent,
@@ -46,9 +68,50 @@ export default function DoorNotesPaper({ onClick, className = '', style }: Props
               clipPath: 'polygon(0% 100%, 5% 0%, 12% 100%, 20% 20%, 28% 100%, 38% 10%, 48% 100%, 58% 15%, 68% 100%, 78% 5%, 88% 100%, 95% 20%, 100% 100%)',
             }}
           />
-          <p className="relative z-10 font-biro text-[15px] sm:text-[17px] leading-none text-[#1e3a5f] -rotate-2 mt-0.5 ml-0.5">
-            NOTES
-          </p>
+
+          <div className="relative z-10 -rotate-1 text-left pt-0.5">
+            <div className="space-y-2.5">
+              <div>
+                <p className="font-biro text-[14px] sm:text-[15px] leading-none text-[#1e3a5f] ml-0.5 font-semibold">
+                  Notes
+                </p>
+                {notePreview.length === 0 ? (
+                  <p className="font-hand text-[12px] sm:text-[13px] leading-tight text-stone-400 ml-1 mt-1 truncate">—</p>
+                ) : (
+                  <ul className="mt-1 space-y-0.5 ml-1">
+                    {notePreview.map(note => (
+                      <li
+                        key={note.id}
+                        className="font-hand text-[12px] sm:text-[13px] leading-snug text-stone-800 truncate"
+                      >
+                        {truncateLine(noteFirstLine(note), 20)}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              <div>
+                <p className="font-biro text-[14px] sm:text-[15px] leading-none text-[#1e3a5f] ml-0.5 font-semibold">
+                  Shopping List
+                </p>
+                {shopPreview.length === 0 ? (
+                  <p className="font-hand text-[12px] sm:text-[13px] leading-tight text-stone-400 ml-1 mt-1 truncate">—</p>
+                ) : (
+                  <ul className="mt-1 space-y-0.5 ml-1">
+                    {shopPreview.map(item => (
+                      <li
+                        key={item.id}
+                        className="font-hand text-[12px] sm:text-[13px] leading-snug text-stone-800 truncate"
+                      >
+                        {truncateLine(item.name, 20)}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </button>

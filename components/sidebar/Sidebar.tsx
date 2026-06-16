@@ -4,16 +4,11 @@ import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { MealNote, ShoppingItem, Store, ShoppingCategory, SHOPPING_CATEGORY_LABELS } from '@/lib/types'
 import { toggleShoppingItemChecked } from '@/lib/shoppingActions'
+import { fetchShoppingSuggestions, upsertShoppingSuggestion, type ShoppingSuggestion } from '@/lib/suggestions'
+import SuggestionNameInput from '@/components/items/SuggestionNameInput'
 import { X, Plus, Trash2, ChevronRight } from 'lucide-react'
 
 const STORES: Store[] = ['Costco', 'Walmart', 'Albertsons', 'Any', 'Other']
-const STORE_EMOJI: Record<Store, string> = {
-  Costco: '🏬',
-  Walmart: '🛒',
-  Albertsons: '🛍️',
-  Any: '📋',
-  Other: '📍',
-}
 const CATEGORIES: ShoppingCategory[] = ['food', 'household', 'personal']
 
 interface Props {
@@ -35,6 +30,7 @@ export default function Sidebar({ open, onClose }: Props) {
   const [newShoppingCategory, setNewShoppingCategory] = useState<ShoppingCategory>('food')
   const [savingNote, setSavingNote] = useState(false)
   const [addingItem, setAddingItem] = useState(false)
+  const [shoppingSuggestions, setShoppingSuggestions] = useState<ShoppingSuggestion[]>([])
 
   const fetchNotes = useCallback(async () => {
     const { data } = await supabase
@@ -52,10 +48,16 @@ export default function Sidebar({ open, onClose }: Props) {
     if (data) setShopping(data.map(row => ({ ...row, category: row.category ?? 'food' })))
   }, [supabase])
 
+  const fetchShoppingSuggestionsList = useCallback(async () => {
+    const data = await fetchShoppingSuggestions(supabase)
+    setShoppingSuggestions(data)
+  }, [supabase])
+
   useEffect(() => {
     if (!open) return
     fetchNotes()
     fetchShopping()
+    fetchShoppingSuggestionsList()
 
     const notesSub = supabase
       .channel('sidebar-notes')
@@ -71,7 +73,7 @@ export default function Sidebar({ open, onClose }: Props) {
       supabase.removeChannel(notesSub)
       supabase.removeChannel(shoppingSub)
     }
-  }, [open, fetchNotes, fetchShopping, supabase])
+  }, [open, fetchNotes, fetchShopping, fetchShoppingSuggestionsList, supabase])
 
   async function addNote() {
     if (!newNoteTitle.trim() || !newNoteContent.trim()) return
@@ -103,7 +105,14 @@ export default function Sidebar({ open, onClose }: Props) {
       category: newShoppingCategory,
       checked: false,
     })
+    await upsertShoppingSuggestion(supabase, {
+      name: newShoppingName.trim(),
+      store: newShoppingStore,
+      category: newShoppingCategory,
+    })
     setNewShoppingName('')
+    await fetchShopping()
+    await fetchShoppingSuggestionsList()
     setAddingItem(false)
   }
 
@@ -254,7 +263,6 @@ export default function Sidebar({ open, onClose }: Props) {
                 return (
                   <div key={store}>
                     <div className="flex items-center gap-1.5 mb-2">
-                      <span className="text-sm">{STORE_EMOJI[store]}</span>
                       <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{store}</span>
                     </div>
                     <div className="space-y-1.5">
@@ -294,15 +302,23 @@ export default function Sidebar({ open, onClose }: Props) {
             </div>
             <div className="p-4 border-t border-slate-200 shrink-0 flex justify-center">
               <div className="w-full max-w-xs space-y-2">
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={newShoppingName}
-                  onChange={e => setNewShoppingName(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && addShoppingItem()}
-                  placeholder="Add item…"
-                  className="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+              <div className="flex gap-2 items-start">
+                <div className="flex-1 min-w-0">
+                  <SuggestionNameInput
+                    value={newShoppingName}
+                    onChange={setNewShoppingName}
+                    suggestions={shoppingSuggestions}
+                    onSelectSuggestion={s => {
+                      setNewShoppingName(s.name)
+                      if (s.store) setNewShoppingStore(s.store)
+                      setNewShoppingCategory(s.category)
+                    }}
+                    getSubLabel={s => `${s.store ?? 'Any'} · ${SHOPPING_CATEGORY_LABELS[s.category]}`}
+                    placeholder="Add item…"
+                    inputClassName="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onKeyDown={e => e.key === 'Enter' && addShoppingItem()}
+                  />
+                </div>
                 <button
                   onClick={addShoppingItem}
                   disabled={addingItem || !newShoppingName.trim()}
@@ -316,7 +332,7 @@ export default function Sidebar({ open, onClose }: Props) {
                 onChange={e => setNewShoppingStore(e.target.value as Store)}
                 className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none"
               >
-                {STORES.map(s => <option key={s} value={s}>{STORE_EMOJI[s]} {s}</option>)}
+                {STORES.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
               <select
                 value={newShoppingCategory}

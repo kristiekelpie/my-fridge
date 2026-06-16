@@ -376,24 +376,17 @@ export default function FridgeInteriorOpen({ itemCounts, onZoneClick, activeZone
           />
           <ZoneLabel x={DOOR_INNER_X} y={FREEZER_Y} w={DOOR_INNER_W} h={FREEZER_H} label="freezer door" active={false} />
 
-          {/* Storage + fridge door — separate click zones, no shared outer box */}
-          <NotchedZoneRow
-            zoneX={DOOR_INNER_X}
-            zoneW={DOOR_INNER_W}
+          {/* Fridge door — single zone (storage + door combined) */}
+          <ClickZone
+            x={DOOR_INNER_X}
             y={DOOR_FRIDGE_Y}
+            w={DOOR_INNER_W}
             h={DOOR_FRIDGE_H}
-            notchRefH={ROW_H}
-            notchLabel="storage"
-            lLabel="fridge door"
-            notchCount={doorCount}
-            lCount={doorCount}
-            notchActive={isDoorActive}
-            lActive={isDoorActive}
-            onNotch={() => onZoneClick('door')}
-            onL={() => onZoneClick('door')}
-            showNotchCount={false}
-            notchFill="url(#interiorWhite)"
-            lFill="url(#interiorWhite)"
+            label="fridge door"
+            count={doorCount}
+            active={isDoorActive}
+            onClick={() => onZoneClick('door')}
+            fillIdle="url(#interiorWhite)"
           />
 
           <rect x={DOOR_X + 4} y={KICKPLATE_Y} width={DOOR_W - 8} height={22} rx="3" fill="#F0F0EE" />

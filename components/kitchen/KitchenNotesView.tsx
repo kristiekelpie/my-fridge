@@ -4,16 +4,11 @@ import { useState, useEffect, useCallback } from 'react'
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/client'
 import { MealNote, ShoppingItem, Store, ShoppingCategory, SHOPPING_CATEGORY_LABELS } from '@/lib/types'
 import { toggleShoppingItemChecked } from '@/lib/shoppingActions'
+import { fetchShoppingSuggestions, upsertShoppingSuggestion, type ShoppingSuggestion } from '@/lib/suggestions'
+import SuggestionNameInput from '@/components/items/SuggestionNameInput'
 import { ChevronLeft, Plus, Trash2, Pencil } from 'lucide-react'
 
 const STORES: Store[] = ['Costco', 'Walmart', 'Albertsons', 'Any', 'Other']
-const STORE_EMOJI: Record<Store, string> = {
-  Costco: '🏬',
-  Walmart: '🛒',
-  Albertsons: '🛍️',
-  Any: '📋',
-  Other: '📍',
-}
 const CATEGORIES: ShoppingCategory[] = ['food', 'household', 'personal']
 
 interface Props {
@@ -38,6 +33,7 @@ export default function KitchenNotesView({ onBack }: Props) {
   const [savingNote, setSavingNote] = useState(false)
   const [addingItem, setAddingItem] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [shoppingSuggestions, setShoppingSuggestions] = useState<ShoppingSuggestion[]>([])
 
   const fetchNotes = useCallback(async () => {
     if (!isSupabaseConfigured()) return
@@ -65,9 +61,16 @@ export default function KitchenNotesView({ onBack }: Props) {
     setShopping((data ?? []).map(row => ({ ...row, category: row.category ?? 'food' })))
   }, [supabase])
 
+  const fetchShoppingSuggestionsList = useCallback(async () => {
+    if (!isSupabaseConfigured()) return
+    const data = await fetchShoppingSuggestions(supabase)
+    setShoppingSuggestions(data)
+  }, [supabase])
+
   useEffect(() => {
     fetchNotes()
     fetchShopping()
+    fetchShoppingSuggestionsList()
 
     if (!isSupabaseConfigured()) return
 
@@ -85,7 +88,7 @@ export default function KitchenNotesView({ onBack }: Props) {
       supabase.removeChannel(notesSub)
       supabase.removeChannel(shoppingSub)
     }
-  }, [fetchNotes, fetchShopping, supabase])
+  }, [fetchNotes, fetchShopping, fetchShoppingSuggestionsList, supabase])
 
   async function addNote() {
     if (!newNoteTitle.trim() || !newNoteContent.trim()) return
@@ -163,8 +166,14 @@ export default function KitchenNotesView({ onBack }: Props) {
       setAddingItem(false)
       return
     }
+    await upsertShoppingSuggestion(supabase, {
+      name: newShoppingName.trim(),
+      store: newShoppingStore,
+      category: newShoppingCategory,
+    })
     setNewShoppingName('')
     await fetchShopping()
+    await fetchShoppingSuggestionsList()
     setAddingItem(false)
   }
 
@@ -318,7 +327,6 @@ export default function KitchenNotesView({ onBack }: Props) {
               return (
                 <div key={store}>
                   <div className="flex items-center gap-1.5 mb-2">
-                    <span>{STORE_EMOJI[store]}</span>
                     <span className="font-mono text-[10px] font-semibold text-stone-500 uppercase tracking-wider">{store}</span>
                   </div>
                   <div className="space-y-1.5">
@@ -357,15 +365,23 @@ export default function KitchenNotesView({ onBack }: Props) {
           </div>
           <div className="p-4 border-t border-stone-300 shrink-0 flex justify-center">
             <div className="w-full max-w-xs space-y-2">
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={newShoppingName}
-                  onChange={e => setNewShoppingName(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && addShoppingItem()}
-                  placeholder="Add item…"
-                  className="flex-1 border border-stone-300 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-stone-400"
-                />
+              <div className="flex gap-2 items-start">
+                <div className="flex-1 min-w-0">
+                  <SuggestionNameInput
+                    value={newShoppingName}
+                    onChange={setNewShoppingName}
+                    suggestions={shoppingSuggestions}
+                    onSelectSuggestion={s => {
+                      setNewShoppingName(s.name)
+                      if (s.store) setNewShoppingStore(s.store)
+                      setNewShoppingCategory(s.category)
+                    }}
+                    getSubLabel={s => `${s.store ?? 'Any'} · ${SHOPPING_CATEGORY_LABELS[s.category]}`}
+                    placeholder="Add item…"
+                    inputClassName="w-full border border-stone-300 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-stone-400"
+                    onKeyDown={e => e.key === 'Enter' && addShoppingItem()}
+                  />
+                </div>
                 <button
                   type="button"
                   onClick={addShoppingItem}
@@ -380,7 +396,7 @@ export default function KitchenNotesView({ onBack }: Props) {
                 onChange={e => setNewShoppingStore(e.target.value as Store)}
                 className="w-full border border-stone-300 rounded-xl px-3 py-2.5 text-sm bg-white"
               >
-                {STORES.map(s => <option key={s} value={s}>{STORE_EMOJI[s]} {s}</option>)}
+                {STORES.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
               <select
                 value={newShoppingCategory}
