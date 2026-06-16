@@ -30,7 +30,7 @@ interface Props {
 const ALL_ZONES: Location[] = ['freezer', 'shelf1', 'shelf2', 'upper_drawer', 'shelf3', 'lower_drawer', 'door']
 
 const FRIDGE_HEIGHT_CLASS =
-  'h-[min(calc(100dvh-8.5rem),calc(100dvh-env(safe-area-inset-bottom)-8.5rem),560px)] sm:h-[min(calc(100dvh-5rem),calc(100dvh-env(safe-area-inset-bottom)-5rem),640px)]'
+  'h-[min(calc(100dvh-6.5rem),calc(100dvh-env(safe-area-inset-bottom)-6.5rem),760px)] sm:h-[min(calc(100dvh-5rem),calc(100dvh-env(safe-area-inset-bottom)-5rem),640px)]'
 
 export default function FridgeView({
   items,
@@ -167,8 +167,8 @@ export default function FridgeView({
 
   return (
     <div className="flex-1 flex flex-col min-h-0 paper overflow-hidden">
-      <div className="flex-1 flex flex-col items-center justify-center min-h-0 px-3 sm:px-6 pt-[max(0.5rem,env(safe-area-inset-top))] pb-4 overflow-visible">
-        <div className="shrink-0 mb-1 text-center px-4 sm:px-8">
+      <div className="flex-1 flex flex-col items-center justify-center min-h-0 px-1.5 sm:px-6 pt-[max(0.25rem,env(safe-area-inset-top))] pb-2 sm:pb-4 overflow-visible">
+        <div className="shrink-0 mb-1 text-center px-3 sm:px-8">
           <p className="font-mono text-[10px] tracking-[0.25em] uppercase text-stone-500">Nic + Kris</p>
           <h1 className="font-mono text-2xl tracking-tight text-stone-900">
             <span className="font-bold">OUR</span>{' '}
@@ -199,7 +199,7 @@ export default function FridgeView({
           </div>
           <div
             className="sm:hidden absolute z-20 -rotate-3"
-            style={{ top: '75%', left: '100%', marginLeft: '0.15rem' }}
+            style={{ top: '76%', right: '-0.25rem', transform: 'translate(8%, 0) rotate(-3deg)' }}
           >
             <ExpiringStamp count={expiringCount} compact onClick={onOpenExpiring} />
           </div>

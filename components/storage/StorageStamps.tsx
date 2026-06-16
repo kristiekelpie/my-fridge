@@ -210,10 +210,10 @@ export function SwipeHint({ show }: { show: boolean }) {
 }
 
 export const CABINET_HEIGHT_CLASS =
-  'h-[min(calc(100dvh-8.5rem),calc(100dvh-env(safe-area-inset-bottom)-8.5rem),560px)] sm:h-[min(calc(100dvh-5rem),calc(100dvh-env(safe-area-inset-bottom)-5rem),640px)]'
+  'h-[min(calc(100dvh-6.5rem),calc(100dvh-env(safe-area-inset-bottom)-6.5rem),760px)] sm:h-[min(calc(100dvh-5rem),calc(100dvh-env(safe-area-inset-bottom)-5rem),640px)]'
 
 export const CUPBOARD_HEIGHT_CLASS =
-  'h-[min(calc((100dvh-8.5rem)*0.7),calc((100dvh-env(safe-area-inset-bottom)-8.5rem)*0.7),392px)] sm:h-[min(calc((100dvh-5rem)*0.7),calc((100dvh-env(safe-area-inset-bottom)-5rem)*0.7),448px)]'
+  'h-[min(calc((100dvh-6.5rem)*0.78),calc((100dvh-env(safe-area-inset-bottom)-6.5rem)*0.78),560px)] sm:h-[min(calc((100dvh-5rem)*0.7),calc((100dvh-env(safe-area-inset-bottom)-5rem)*0.7),448px)]'
 
 export const WINE_FRIDGE_HEIGHT_CLASS =
-  'h-[min(calc((100dvh-8.5rem)*0.75),calc((100dvh-env(safe-area-inset-bottom)-8.5rem)*0.75),420px)] sm:h-[min(calc((100dvh-5rem)*0.75),calc((100dvh-env(safe-area-inset-bottom)-5rem)*0.75),480px)]'
+  'h-[min(calc((100dvh-6.5rem)*0.82),calc((100dvh-env(safe-area-inset-bottom)-6.5rem)*0.82),600px)] sm:h-[min(calc((100dvh-5rem)*0.75),calc((100dvh-env(safe-area-inset-bottom)-5rem)*0.75),480px)]'

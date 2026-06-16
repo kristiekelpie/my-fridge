@@ -56,8 +56,8 @@ export default function CabinetHomeView({
 
   return (
     <div className="flex-1 flex flex-col min-h-0 paper overflow-hidden">
-      <div className="flex-1 flex flex-col items-center justify-center min-h-0 px-3 sm:px-6 pt-[max(0.5rem,env(safe-area-inset-top))] pb-4 overflow-visible">
-        <div className="shrink-0 mb-1 text-center px-4 sm:px-8">
+      <div className="flex-1 flex flex-col items-center justify-center min-h-0 px-1.5 sm:px-6 pt-[max(0.25rem,env(safe-area-inset-top))] pb-2 sm:pb-4 overflow-visible w-full">
+        <div className="shrink-0 mb-1 text-center px-3 sm:px-8">
           <p className="font-mono text-[10px] tracking-[0.25em] uppercase text-stone-500">Nic + Kris</p>
           <h1 className="font-mono text-2xl tracking-tight text-stone-900">
             <span className="font-bold">OUR</span>{' '}
@@ -66,15 +66,26 @@ export default function CabinetHomeView({
         </div>
 
         <div className="relative shrink-0 mx-auto w-fit max-w-full overflow-visible">
-          <div className="absolute z-20 sm:hidden -rotate-6" style={{ top: '3%', left: '76%' }}>
-            <InstockStamp totalItems={totalItems} compact onClick={onOpenInventory} />
-          </div>
-          <div
-            className="hidden sm:block absolute z-10"
-            style={{ top: '2%', left: '100%', marginLeft: '-0.5rem', transform: 'rotate(-4deg)' }}
-          >
-            <InstockStamp totalItems={totalItems} onClick={onOpenInventory} />
-          </div>
+          {area === 'cupboard' ? (
+            <div
+              className="absolute z-20 -rotate-6"
+              style={{ top: '2%', right: '-0.25rem', transform: 'translate(8%, -10%) rotate(-6deg)' }}
+            >
+              <InstockStamp totalItems={totalItems} compact onClick={onOpenInventory} />
+            </div>
+          ) : (
+            <>
+              <div className="absolute z-20 sm:hidden -rotate-6" style={{ top: '3%', left: '76%' }}>
+                <InstockStamp totalItems={totalItems} compact onClick={onOpenInventory} />
+              </div>
+              <div
+                className="hidden sm:block absolute z-10"
+                style={{ top: '2%', left: '100%', marginLeft: '-0.5rem', transform: 'rotate(-4deg)' }}
+              >
+                <InstockStamp totalItems={totalItems} onClick={onOpenInventory} />
+              </div>
+            </>
+          )}
 
           <TapToOpenMobile />
           <TapToOpenDesktop />
@@ -90,7 +101,7 @@ export default function CabinetHomeView({
               </div>
               <div
                 className="sm:hidden absolute z-20 -rotate-3"
-                style={{ top: '75%', left: '100%', marginLeft: '0.15rem' }}
+                style={{ top: '76%', right: '-0.25rem', transform: 'translate(8%, 0) rotate(-3deg)' }}
               >
                 <ExpiringStamp count={expiringCount} compact onClick={onOpenExpiring} />
               </div>

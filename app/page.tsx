@@ -203,15 +203,15 @@ export default function HomePage() {
 
       <button
         onClick={() => setShowForm(true)}
-        className="fixed z-30 w-14 h-14 bg-stone-900 text-stone-50 rounded-full shadow-lg flex items-center justify-center active:scale-95 transition-transform border-2 border-stone-50"
+        className="fixed z-30 w-[72px] h-[72px] bg-stone-900 text-stone-50 rounded-full flex items-center justify-center active:scale-95 transition-transform border-[3px] border-stone-50"
         style={{
-          boxShadow: '0 6px 20px rgba(0, 0, 0, 0.25)',
-          bottom: 'max(1rem, env(safe-area-inset-bottom, 0px))',
-          right: 'max(1rem, env(safe-area-inset-right, 0px))',
+          boxShadow: '0 10px 28px rgba(0, 0, 0, 0.28), 0 2px 6px rgba(0,0,0,0.15)',
+          bottom: 'calc(max(2.25rem, env(safe-area-inset-bottom, 0px) + 1.25rem))',
+          right: 'max(1.25rem, env(safe-area-inset-right, 0px))',
         }}
         aria-label="Add item"
       >
-        <Plus size={26} strokeWidth={2.5} />
+        <Plus size={34} strokeWidth={2.75} />
       </button>
 
       {showForm && (
