@@ -13,10 +13,10 @@ export const metadata: Metadata = {
   applicationName: "Our Fridge",
   icons: {
     icon: [
-      { url: "/favicon.ico?v=4", sizes: "any" },
-      { url: "/icon.png?v=4", type: "image/png", sizes: "512x512" },
+      { url: "/favicon.ico?v=5", sizes: "any" },
+      { url: "/icon.png?v=5", type: "image/png", sizes: "512x512" },
     ],
-    apple: [{ url: "/apple-icon.png?v=4", type: "image/png", sizes: "180x180" }],
+    apple: [{ url: "/apple-icon.png?v=5", type: "image/png", sizes: "180x180" }],
   },
   appleWebApp: {
     capable: true,
