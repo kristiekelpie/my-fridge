@@ -214,8 +214,8 @@ export default function FridgeView({
             <InstockStamp totalItems={totalItems} onClick={onOpenInventory} />
           </div>
 
-          <TapToOpenMobile style={{ left: '-14%' }} />
-          <TapToOpenDesktop style={{ transform: 'translateX(0.25rem)' }} />
+          <TapToOpenMobile style={{ left: '-22%' }} />
+          <TapToOpenDesktop />
           <SwipeHint show={showSwipeHint && isActivePanel} />
 
           <div

@@ -260,6 +260,12 @@ export const EXPIRY_STATUS_CONFIG: Record<ExpiryStatus, { label: string; bg: str
   expired: { label: 'Expired', bg: 'bg-stone-900', text: 'text-white', border: 'border-stone-900' },
 }
 
+export function sortItemsByExpiryDate(items: HouseholdItem[]): HouseholdItem[] {
+  return [...items].sort(
+    (a, b) => new Date(a.expiry_date).getTime() - new Date(b.expiry_date).getTime()
+  )
+}
+
 export function groupItemsByCategory(items: HouseholdItem[]): { category: Category; items: HouseholdItem[] }[] {
   const byCategory = new Map<Category, HouseholdItem[]>()
 
@@ -270,12 +276,15 @@ export function groupItemsByCategory(items: HouseholdItem[]): { category: Catego
     byCategory.set(cat, list)
   }
 
-  return CATEGORIES
+  const categoryOrder: Category[] = [
+    'cooked_food',
+    ...CATEGORIES.filter(category => category !== 'cooked_food'),
+  ]
+
+  return categoryOrder
     .filter(cat => (byCategory.get(cat)?.length ?? 0) > 0)
     .map(category => ({
       category,
-      items: (byCategory.get(category) ?? []).sort(
-        (a, b) => new Date(a.expiry_date).getTime() - new Date(b.expiry_date).getTime()
-      ),
+      items: sortItemsByExpiryDate(byCategory.get(category) ?? []),
     }))
 }

@@ -2,6 +2,7 @@
 
 import DoorPolaroid, { PolaroidSlot } from './DoorPolaroid'
 import DoorNotesPaper from './DoorNotesPaper'
+import F15Magnet from './F15Magnet'
 import { MagneticPhrase, HELLO_CHEF_LETTERS, I_LOVE_YOU_LETTERS, I_LOVE_YOU_LETTERS_MOBILE } from './MagneticLetters'
 import type { MealNote, ShoppingItem } from '@/lib/types'
 
@@ -234,6 +235,13 @@ export default function FridgeClosed({
           letters={HELLO_CHEF_LETTERS}
           className="translate-x-[2px] translate-y-[14px] !z-[25]"
         />
+        <div
+          className="absolute pointer-events-none z-[20] -rotate-[12deg]"
+          style={{ top: '66%', left: '8%' }}
+          aria-hidden
+        >
+          <F15Magnet size={51} className="max-sm:scale-[0.88]" />
+        </div>
       </div>
 
       {/* Handle tap → open */}

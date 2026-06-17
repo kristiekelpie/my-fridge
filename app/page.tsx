@@ -7,8 +7,6 @@ import FridgeView from '@/components/fridge/FridgeView'
 import ItemForm from '@/components/items/ItemForm'
 import HistoryView from '@/components/history/HistoryView'
 import MasterInventoryView from '@/components/fridge/MasterInventoryView'
-import ItemListByCategory from '@/components/fridge/ItemListByCategory'
-import ItemListByStorageArea from '@/components/fridge/ItemListByStorageArea'
 import Sidebar from '@/components/sidebar/Sidebar'
 import StorageSwiper from '@/components/storage/StorageSwiper'
 import { DoorPhotosProvider } from '@/components/fridge/DoorPhotosContext'
@@ -181,29 +179,22 @@ export default function HomePage() {
             onDelete={handleDelete}
           />
         ) : fullPageView === 'inventory' ? (
-          activeArea === 'fridge' ? (
-            <MasterInventoryView
-              items={areaItems}
-              scopeArea="fridge"
-              title={inventoryTitle}
-              onBack={() => setFullPageView(null)}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-            />
-          ) : (
-            <ItemListByCategory
-              title={inventoryTitle}
-              subtitle={`${areaItems.length} item${areaItems.length !== 1 ? 's' : ''} — grouped by category`}
-              items={areaItems}
-              onBack={() => setFullPageView(null)}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-            />
-          )
+          <MasterInventoryView
+            items={areaItems}
+            scopeArea={activeArea}
+            title={inventoryTitle}
+            showFilters={false}
+            onBack={() => setFullPageView(null)}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
         ) : fullPageView === 'expiring' ? (
-          <ItemListByStorageArea
+          <MasterInventoryView
             title="Expiring Soon"
-            subtitle={`${allExpiringCount} item${allExpiringCount !== 1 ? 's' : ''} — all storage areas`}
+            subtitle={`${allExpiringCount} item${allExpiringCount !== 1 ? 's' : ''} — earliest expiry first`}
+            emptyMessage="nothing expiring soon"
+            showFilters={false}
+            groupByCategory={false}
             items={allExpiringItems}
             onBack={() => setFullPageView(null)}
             onEdit={handleEdit}

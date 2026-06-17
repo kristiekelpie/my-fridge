@@ -10,9 +10,16 @@ import {
   CATEGORY_LABELS,
   CATEGORY_EMOJI,
   groupItemsByCategory,
+  sortItemsByExpiryDate,
   normalizeCategory,
 } from '@/lib/types'
-import { STORAGE_AREAS, STORAGE_AREA_LABELS, normalizeStorageArea } from '@/lib/storageAreas'
+import {
+  STORAGE_AREAS,
+  STORAGE_AREA_LABELS,
+  STORAGE_AREA_HEADING,
+  FRIDGE_SECTION_LABELS,
+  normalizeStorageArea,
+} from '@/lib/storageAreas'
 import ItemCard from '@/components/items/ItemCard'
 import CategoryListPage from './CategoryListPage'
 import CollapsibleCategorySection from './CollapsibleCategorySection'
@@ -24,27 +31,38 @@ interface Props {
   onDelete: (id: string) => void
   title?: string
   subtitle?: string
+  emptyMessage?: string
+  /** Section / type filter dropdowns in the header. */
+  showFilters?: boolean
   /** When set, limits view to one storage area and hides the section filter. */
   scopeArea?: StorageArea
+  /** When false, items are grouped by storage area and sorted by expiry (no category headers). */
+  groupByCategory?: boolean
 }
 
 function areaItemGroups(area: StorageArea, sectionItems: HouseholdItem[]) {
   if (area === 'fridge') {
     return [
-      { label: 'FREEZER', items: sectionItems.filter(item => item.location === 'freezer') },
-      { label: 'FRIDGE', items: sectionItems.filter(item => item.location !== 'freezer') },
+      {
+        label: FRIDGE_SECTION_LABELS.freezer,
+        items: sectionItems.filter(item => item.location === 'freezer'),
+      },
+      {
+        label: FRIDGE_SECTION_LABELS.fridge,
+        items: sectionItems.filter(item => item.location !== 'freezer'),
+      },
     ].filter(group => group.items.length > 0)
   }
-  return [{ label: STORAGE_AREA_LABELS[area], items: sectionItems }]
+  return [{ label: STORAGE_AREA_HEADING[area], items: sectionItems }]
 }
 
-function CategoryAreaGroups({
-  categoryItems,
+function StorageAreaGroups({
+  items,
   scopeArea,
   onEdit,
   onDelete,
 }: {
-  categoryItems: HouseholdItem[]
+  items: HouseholdItem[]
   scopeArea?: StorageArea
   onEdit: (item: HouseholdItem) => void
   onDelete: (id: string) => void
@@ -54,8 +72,8 @@ function CategoryAreaGroups({
   return (
     <>
       {areas.map(area => {
-        const sectionItems = categoryItems.filter(
-          item => normalizeStorageArea(item.storage_area) === area
+        const sectionItems = sortItemsByExpiryDate(
+          items.filter(item => normalizeStorageArea(item.storage_area) === area)
         )
         if (sectionItems.length === 0) return null
 
@@ -73,6 +91,27 @@ function CategoryAreaGroups({
         ))
       })}
     </>
+  )
+}
+
+function CategoryAreaGroups({
+  categoryItems,
+  scopeArea,
+  onEdit,
+  onDelete,
+}: {
+  categoryItems: HouseholdItem[]
+  scopeArea?: StorageArea
+  onEdit: (item: HouseholdItem) => void
+  onDelete: (id: string) => void
+}) {
+  return (
+    <StorageAreaGroups
+      items={categoryItems}
+      scopeArea={scopeArea}
+      onEdit={onEdit}
+      onDelete={onDelete}
+    />
   )
 }
 
@@ -181,7 +220,10 @@ export default function MasterInventoryView({
   onDelete,
   title = 'Master Inventory',
   subtitle,
+  emptyMessage = 'nothing here yet',
+  showFilters = true,
   scopeArea,
+  groupByCategory = true,
 }: Props) {
   const [selectedSections, setSelectedSections] = useState<Set<StorageArea>>(new Set())
   const [selectedTypes, setSelectedTypes] = useState<Set<Category>>(new Set())
@@ -192,19 +234,22 @@ export default function MasterInventoryView({
       const area = normalizeStorageArea(item.storage_area)
       const category = normalizeCategory(item.category)
       if (scopeArea && area !== scopeArea) return false
-      if (selectedSections.size > 0 && !selectedSections.has(area)) return false
-      if (selectedTypes.size > 0 && !selectedTypes.has(category)) return false
+      if (showFilters && selectedSections.size > 0 && !selectedSections.has(area)) return false
+      if (showFilters && selectedTypes.size > 0 && !selectedTypes.has(category)) return false
       return true
     })
-  }, [items, scopeArea, selectedSections, selectedTypes])
+  }, [items, scopeArea, showFilters, selectedSections, selectedTypes])
 
   const groups = useMemo(() => groupItemsByCategory(filteredItems), [filteredItems])
 
   const filtersActive = selectedSections.size > 0 || selectedTypes.size > 0
-  const showSectionFilter = !scopeArea
+  const showSectionFilter = showFilters && !scopeArea
   const resolvedSubtitle =
     subtitle ??
-    `${filteredItems.length} item${filteredItems.length !== 1 ? 's' : ''} — grouped by type`
+    (groupByCategory
+      ? `${filteredItems.length} item${filteredItems.length !== 1 ? 's' : ''} — grouped by type`
+      : `${filteredItems.length} item${filteredItems.length !== 1 ? 's' : ''} — earliest expiry first`)
+  const isEmpty = groupByCategory ? groups.length === 0 : filteredItems.length === 0
 
   function toggleFilter(panel: Exclude<OpenFilter, null>) {
     setOpenFilter(current => (current === panel ? null : panel))
@@ -220,9 +265,10 @@ export default function MasterInventoryView({
       title={title}
       subtitle={resolvedSubtitle}
       onBack={onBack}
-      isEmpty={groups.length === 0}
-      emptyMessage={filtersActive ? 'no items match these filters' : 'nothing here yet'}
+      isEmpty={isEmpty}
+      emptyMessage={filtersActive ? 'no items match these filters' : emptyMessage}
       headerExtra={
+        showFilters ? (
         <div className="mt-3 space-y-2 overflow-visible">
           <div className="flex flex-col sm:flex-row gap-2 items-start overflow-visible">
             {showSectionFilter && (
@@ -276,18 +322,34 @@ export default function MasterInventoryView({
             </button>
           )}
         </div>
+        ) : undefined
       }
     >
-      {groups.map(({ category, items: categoryItems }) => (
-        <CollapsibleCategorySection key={category} category={category} itemCount={categoryItems.length}>
-          <CategoryAreaGroups
-            categoryItems={categoryItems}
-            scopeArea={scopeArea}
-            onEdit={onEdit}
-            onDelete={onDelete}
-          />
-        </CollapsibleCategorySection>
-      ))}
+      {groupByCategory ? (
+        groups.map(({ category, items: categoryItems }) => (
+          <CollapsibleCategorySection key={category} category={category} itemCount={categoryItems.length}>
+            <CategoryAreaGroups
+              categoryItems={categoryItems}
+              scopeArea={scopeArea}
+              onEdit={onEdit}
+              onDelete={onDelete}
+            />
+          </CollapsibleCategorySection>
+        ))
+      ) : (
+        <section>
+          <div className="pt-3 pb-4">
+            <div className="grid grid-cols-3 gap-2">
+              <StorageAreaGroups
+                items={filteredItems}
+                scopeArea={scopeArea}
+                onEdit={onEdit}
+                onDelete={onDelete}
+              />
+            </div>
+          </div>
+        </section>
+      )}
     </CategoryListPage>
   )
 }

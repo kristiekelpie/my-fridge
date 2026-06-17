@@ -235,12 +235,12 @@ export function SwipeHint({ show }: { show: boolean }) {
   const desktopHintClass =
     'font-mono text-[9px] tracking-[0.25em] uppercase text-stone-500 whitespace-nowrap'
   const mobileWordClass =
-    'font-mono text-[7px] tracking-[0.18em] uppercase text-stone-400 leading-[1.15]'
+    'font-mono text-[7px] tracking-[0.18em] uppercase text-stone-500 leading-[1.15]'
 
   return (
     <>
-      <div className="absolute z-10 pointer-events-none right-0 top-1/2 -translate-y-1/2 translate-x-full ml-4 sm:hidden">
-        <div className="grid grid-cols-[auto_1fr] gap-x-0.5 text-stone-400">
+      <div className="absolute z-10 pointer-events-none right-0 top-1/2 -translate-y-1/2 translate-x-[88%] sm:hidden">
+        <div className="grid grid-cols-[auto_1fr] gap-x-0.5 text-stone-500">
           <span className={`${mobileWordClass} col-start-2`}>swipe</span>
           <span className={`${mobileWordClass} col-start-2`}>for</span>
           <span className={`${mobileWordClass} col-start-2`}>more</span>
@@ -249,7 +249,7 @@ export function SwipeHint({ show }: { show: boolean }) {
       </div>
       <div
         className="hidden sm:block absolute z-10 pointer-events-none top-1/2 -translate-y-1/2"
-        style={{ left: '100%', marginLeft: '7rem' }}
+        style={{ left: '100%', marginLeft: '5rem' }}
       >
         <div className="flex flex-col items-center text-stone-500">
           <p className={desktopHintClass}>swipe for more</p>
