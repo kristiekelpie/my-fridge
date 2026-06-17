@@ -42,7 +42,7 @@ export function getLocalDoorPhotos(): Record<PolaroidSlot, string | null> {
 }
 
 /** Resize and compress for polaroid display + localStorage. */
-export function fileToResizedDataUrl(file: File, maxPx = 480): Promise<string> {
+export function fileToResizedDataUrl(file: File, maxPx = 500): Promise<string> {
   return new Promise((resolve, reject) => {
     const objectUrl = URL.createObjectURL(file)
     const img = new Image()

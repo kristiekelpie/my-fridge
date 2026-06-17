@@ -31,7 +31,7 @@ export default function PhotoUploadField({
   const fileRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
   const [cropSrc, setCropSrc] = useState<string | null>(null)
-  const resolvedCropMaxPx = cropMaxPx ?? (storageFolder === 'meal-notes' ? 720 : 480)
+  const resolvedCropMaxPx = cropMaxPx ?? (storageFolder === 'meal-notes' ? 1080 : 500)
   const itemDisplaySrc = useItemPhotoDisplay(photoUrl || null)
   const mealNoteDisplaySrc = useMealNotePhotoDisplay(photoUrl || null)
   const displaySrc = storageFolder === 'meal-notes' ? mealNoteDisplaySrc : itemDisplaySrc

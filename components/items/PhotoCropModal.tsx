@@ -18,7 +18,7 @@ export default function PhotoCropModal({
   imageSrc,
   onConfirm,
   onCancel,
-  maxPx = 480,
+  maxPx = 500,
   jpegQuality = 0.82,
 }: Props) {
   const [crop, setCrop] = useState({ x: 0, y: 0 })

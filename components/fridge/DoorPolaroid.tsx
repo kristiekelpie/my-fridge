@@ -83,7 +83,7 @@ export default function DoorPolaroid({
           imageSrc={cropSrc}
           onConfirm={handleCropConfirm}
           onCancel={handleCropCancel}
-          maxPx={480}
+          maxPx={500}
         />
       )}
       <input

@@ -8,7 +8,7 @@ import { fetchShoppingSuggestions, fetchFridgeSuggestions, upsertShoppingSuggest
 import SuggestionNameInput from '@/components/items/SuggestionNameInput'
 import PhotoUploadField from '@/components/items/PhotoUploadField'
 import MealNotePhoto from '@/components/kitchen/MealNotePhoto'
-import { X, Trash2, ChevronRight, Plus } from 'lucide-react'
+import { X, Trash2, ChevronRight, Plus, Pencil } from 'lucide-react'
 
 const STORES: Store[] = ['Costco', 'Walmart', 'Albertsons', 'Any', 'Other']
 const CATEGORIES: ShoppingCategory[] = ['food', 'household', 'personal']
@@ -70,6 +70,10 @@ export default function Sidebar({
   const [newNoteTitle, setNewNoteTitle] = useState('')
   const [newNoteContent, setNewNoteContent] = useState('')
   const [newNotePhotoUrl, setNewNotePhotoUrl] = useState('')
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
+  const [editNoteTitle, setEditNoteTitle] = useState('')
+  const [editNoteContent, setEditNoteContent] = useState('')
+  const [editNotePhotoUrl, setEditNotePhotoUrl] = useState('')
   const [uploadingNotePhoto, setUploadingNotePhoto] = useState(false)
   const [showAddNoteForm, setShowAddNoteForm] = useState(false)
   const [showAddShoppingForm, setShowAddShoppingForm] = useState(false)
@@ -136,7 +140,10 @@ export default function Sidebar({
   }, [open, fetchNotes, fetchShopping, fetchShoppingSuggestionsList, fetchHistoryCount, supabase])
 
   useEffect(() => {
-    if (!open || panel !== 'notes') setShowAddNoteForm(false)
+    if (!open || panel !== 'notes') {
+      setShowAddNoteForm(false)
+      setEditingNoteId(null)
+    }
     if (!open || panel !== 'shopping') setShowAddShoppingForm(false)
   }, [open, panel])
 
@@ -149,6 +156,38 @@ export default function Sidebar({
   function closeAddNoteForm() {
     setShowAddNoteForm(false)
     resetNoteForm()
+  }
+
+  function startEditNote(note: MealNote) {
+    setShowAddNoteForm(false)
+    setEditingNoteId(note.id)
+    setEditNoteTitle(note.title)
+    setEditNoteContent(note.content)
+    setEditNotePhotoUrl(note.photo_url ?? '')
+  }
+
+  function cancelEditNote() {
+    setEditingNoteId(null)
+    setEditNotePhotoUrl('')
+  }
+
+  async function saveEditNote() {
+    if (!editingNoteId || !editNoteTitle.trim() || !editNoteContent.trim()) return
+    setSavingNote(true)
+    const { error } = await supabase
+      .from('meal_notes')
+      .update({
+        title: editNoteTitle.trim(),
+        content: editNoteContent.trim(),
+        photo_url: editNotePhotoUrl || null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', editingNoteId)
+    setSavingNote(false)
+    if (error) return
+    setEditingNoteId(null)
+    setEditNotePhotoUrl('')
+    await fetchNotes()
   }
 
   function resetShoppingForm() {
@@ -312,27 +351,83 @@ export default function Sidebar({
               )}
               {notes.map(note => (
                 <div key={note.id} className="bg-stone-50 border border-stone-900/90 shadow-sm rounded-xl p-3 relative">
-                  <button
-                    type="button"
-                    onClick={() => deleteNote(note.id)}
-                    className="absolute top-2 right-2 p-1 text-slate-400 active:text-red-500"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                  <h4 className="text-sm font-semibold text-slate-800 pr-6">{note.title}</h4>
-                  <MealNotePhoto photoUrl={note.photo_url} className="mt-2" />
-                  <p className="text-xs text-slate-600 mt-1 whitespace-pre-wrap">{note.content}</p>
-                  <p className="text-xs text-slate-400 mt-1.5">
-                    {new Date(note.created_at).toLocaleDateString()}
-                  </p>
+                  {editingNoteId === note.id ? (
+                    <div className="space-y-2 pr-1">
+                      <PhotoUploadField
+                        photoUrl={editNotePhotoUrl}
+                        onPhotoUrlChange={setEditNotePhotoUrl}
+                        onUploadingChange={setUploadingNotePhoto}
+                        storageFolder="meal-notes"
+                      />
+                      <input
+                        type="text"
+                        value={editNoteTitle}
+                        onChange={e => setEditNoteTitle(e.target.value)}
+                        className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <textarea
+                        value={editNoteContent}
+                        onChange={e => setEditNoteContent(e.target.value)}
+                        rows={3}
+                        className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={saveEditNote}
+                          disabled={savingNote || uploadingNotePhoto || !editNoteTitle.trim() || !editNoteContent.trim()}
+                          className="flex-1 py-2 bg-stone-900 text-white rounded-xl text-sm font-semibold disabled:opacity-50"
+                        >
+                          {savingNote ? 'Saving…' : 'Save'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={cancelEditNote}
+                          className="flex-1 py-2 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="absolute top-2 right-2 flex gap-1">
+                        <button
+                          type="button"
+                          onClick={() => startEditNote(note)}
+                          className="p-1 text-slate-400 active:text-slate-700"
+                          aria-label="Edit note"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => deleteNote(note.id)}
+                          className="p-1 text-slate-400 active:text-red-500"
+                          aria-label="Delete note"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                      <h4 className="text-sm font-semibold text-slate-800 pr-12">{note.title}</h4>
+                      <MealNotePhoto photoUrl={note.photo_url} className="mt-2" />
+                      <p className="text-xs text-slate-600 mt-1 whitespace-pre-wrap">{note.content}</p>
+                      <p className="text-xs text-slate-400 mt-1.5">
+                        {new Date(note.created_at).toLocaleDateString()}
+                      </p>
+                    </>
+                  )}
                 </div>
               ))}
             </div>
 
-            {!showAddNoteForm && (
+            {!showAddNoteForm && !editingNoteId && (
               <button
                 type="button"
-                onClick={() => setShowAddNoteForm(true)}
+                onClick={() => {
+                  cancelEditNote()
+                  setShowAddNoteForm(true)
+                }}
                 className="absolute bottom-4 right-4 z-10 w-12 h-12 bg-stone-900 text-white rounded-full flex items-center justify-center active:scale-95 transition-transform shadow-lg border-2 border-white"
                 aria-label="Add meal note"
               >

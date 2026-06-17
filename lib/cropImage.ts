@@ -13,7 +13,7 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 export async function cropImageToDataUrl(
   imageSrc: string,
   crop: CropArea,
-  maxPx = 480,
+  maxPx = 500,
   jpegQuality = 0.82
 ): Promise<string> {
   const img = await loadImage(imageSrc)
