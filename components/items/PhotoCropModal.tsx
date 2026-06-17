@@ -1,6 +1,7 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import Cropper, { type Area } from 'react-easy-crop'
 import { cropImageToDataUrl } from '@/lib/cropImage'
 import { Loader2, X } from 'lucide-react'
@@ -24,6 +25,9 @@ export default function PhotoCropModal({
   const [zoom, setZoom] = useState(1)
   const [croppedArea, setCroppedArea] = useState<Area | null>(null)
   const [processing, setProcessing] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => setMounted(true), [])
 
   const onCropComplete = useCallback((_: Area, pixels: Area) => {
     setCroppedArea(pixels)
@@ -40,8 +44,10 @@ export default function PhotoCropModal({
     }
   }
 
-  return (
-    <div className="fixed inset-0 z-[60] flex flex-col bg-stone-900">
+  if (!mounted) return null
+
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex flex-col bg-stone-900">
       <div className="flex items-center justify-between px-4 py-3 shrink-0">
         <button
           type="button"
@@ -89,6 +95,7 @@ export default function PhotoCropModal({
           className="w-full accent-stone-200"
         />
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
