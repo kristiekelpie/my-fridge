@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { HouseholdItem, CATEGORY_LABELS, CATEGORY_EMOJI, getExpiryStatus, EXPIRY_STATUS_CONFIG, normalizeCategory, daysUntilExpiry } from '@/lib/types'
+import { HouseholdItem, CATEGORY_LABELS, getExpiryStatus, EXPIRY_STATUS_CONFIG, normalizeCategory, daysUntilExpiry } from '@/lib/types'
 import { useItemPhotoDisplay } from '@/components/items/useItemPhotoDisplay'
 import { Pencil, Trash2 } from 'lucide-react'
 
@@ -69,40 +69,37 @@ export default function ItemCard({ item, onEdit, onDelete }: Props) {
         </div>
 
         {/* Back face */}
-        <div className="card-face card-back rounded-md bg-stone-50 border border-stone-900/90 shadow-sm p-2.5 flex flex-col justify-between">
-          <div>
-            <div className="flex items-start justify-between gap-1 mb-1">
-              <h3 className="font-mono text-[11px] font-bold uppercase tracking-wide text-stone-900 leading-tight line-clamp-2">
-                {item.name}
-              </h3>
-              <span className="text-base shrink-0">{CATEGORY_EMOJI[category]}</span>
-            </div>
-            <span className={`inline-block font-mono text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-sm border mb-1.5 ${statusCfg.bg} ${statusCfg.text} ${statusCfg.border}`}>
+        <div className="card-face card-back rounded-md bg-stone-50 border border-stone-900/90 shadow-sm p-2 flex flex-col min-h-0 overflow-hidden">
+          <div className="min-h-0 flex-1 overflow-hidden">
+            <h3 className="font-mono text-[10px] font-bold uppercase tracking-wide text-stone-900 leading-tight line-clamp-2 mb-1">
+              {item.name}
+            </h3>
+            <span className={`inline-block font-mono text-[8px] font-bold uppercase tracking-wider px-1 py-0.5 rounded-sm border mb-1 ${statusCfg.bg} ${statusCfg.text} ${statusCfg.border}`}>
               {statusCfg.label} · {expiryLabel}
             </span>
-            <p className="font-mono text-[9px] text-stone-500 uppercase tracking-wider">{CATEGORY_LABELS[category]}</p>
+            <p className="font-mono text-[8px] text-stone-500 uppercase tracking-wider leading-tight">{CATEGORY_LABELS[category]}</p>
             {item.notes && (
-              <p className="font-hand text-sm text-stone-600 mt-1 leading-tight line-clamp-2">{item.notes}</p>
+              <p className="font-hand text-[11px] text-stone-600 mt-0.5 leading-tight line-clamp-1">{item.notes}</p>
             )}
           </div>
-          <div className="flex gap-1.5 mt-2">
+          <div className="flex gap-1 shrink-0 pt-1">
             <button
               type="button"
               onPointerDown={e => e.stopPropagation()}
               onClick={e => { e.stopPropagation(); onEdit(item) }}
-              className="relative z-10 flex-1 flex items-center justify-center gap-1 py-1.5 rounded-sm bg-stone-200 text-stone-700 font-mono text-[9px] font-bold uppercase tracking-wider active:bg-stone-300"
+              aria-label="Edit item"
+              className="relative z-10 flex-1 h-6 flex items-center justify-center rounded-sm bg-stone-200 text-stone-700 active:bg-stone-300"
             >
-              <Pencil size={10} />
-              Edit
+              <Pencil size={11} strokeWidth={2.25} />
             </button>
             <button
               type="button"
               onPointerDown={e => e.stopPropagation()}
               onClick={e => { e.stopPropagation(); onDelete(item.id) }}
-              className="relative z-10 flex-1 flex items-center justify-center gap-1 py-1.5 rounded-sm bg-red-100 text-red-800 font-mono text-[9px] font-bold uppercase tracking-wider active:bg-red-200"
+              aria-label="Delete item"
+              className="relative z-10 flex-1 h-6 flex items-center justify-center rounded-sm bg-red-100 text-red-800 active:bg-red-200"
             >
-              <Trash2 size={10} />
-              Delete
+              <Trash2 size={11} strokeWidth={2.25} />
             </button>
           </div>
         </div>

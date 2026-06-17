@@ -25,6 +25,7 @@ interface Props {
   onDelete: (id: string) => void
   onOpenInventory: () => void
   onOpenExpiring: () => void
+  onNotesOpenChange?: (open: boolean) => void
 }
 
 const ALL_ZONES: Location[] = ['freezer', 'shelf1', 'shelf2', 'upper_drawer', 'shelf3', 'lower_drawer', 'door']
@@ -39,6 +40,7 @@ export default function FridgeView({
   onDelete,
   onOpenInventory,
   onOpenExpiring,
+  onNotesOpenChange,
 }: Props) {
   const supabase = createClient()
   const isActivePanel = useStoragePanelActive()
@@ -98,6 +100,10 @@ export default function FridgeView({
       supabase.removeChannel(shoppingChannel)
     }
   }, [fetchNotes, fetchShopping, isActivePanel, supabase])
+
+  useEffect(() => {
+    onNotesOpenChange?.(kitchenNotesOpen && isActivePanel)
+  }, [kitchenNotesOpen, isActivePanel, onNotesOpenChange])
 
   function handleOpenFreezer() {
     setSelectedZone('freezer')

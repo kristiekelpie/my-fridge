@@ -18,7 +18,6 @@ export function useItemPhotoDisplay(photoUrl: string | null | undefined): string
       return
     }
 
-    setSrc(photoUrl)
     let cancelled = false
     void ensureItemPhotoCached(photoUrl).then(next => {
       if (!cancelled) setSrc(next)

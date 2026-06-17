@@ -57,11 +57,8 @@ export default function StorageSwiper({ activeArea, onAreaChange, children }: Pr
     if (!el || el.clientWidth === 0 || isJumping.current) return
 
     const physical = Math.round(el.scrollLeft / el.clientWidth)
-    if (physical === activePhysicalRef.current) return
-
-    activePhysicalRef.current = physical
-    setActivePhysical(physical)
-    setDisplayArea(STORAGE_AREAS[logicalFromPhysical(physical)])
+    const area = STORAGE_AREAS[logicalFromPhysical(physical)]
+    setDisplayArea(prev => (prev === area ? prev : area))
   }, [])
 
   const scrollToPhysical = useCallback((index: number, smooth: boolean) => {
@@ -77,20 +74,26 @@ export default function StorageSwiper({ activeArea, onAreaChange, children }: Pr
     if (!el || el.clientWidth === 0 || isJumping.current) return
 
     const physical = Math.round(el.scrollLeft / el.clientWidth)
+    let targetPhysical: number | null = null
 
     if (physical === 0) {
-      isJumping.current = true
-      el.scrollTo({ left: primaryPhysical(PANEL_COUNT - 1) * el.clientWidth, behavior: 'instant' })
-      activePhysicalRef.current = primaryPhysical(PANEL_COUNT - 1)
-      setActivePhysical(primaryPhysical(PANEL_COUNT - 1))
-      isJumping.current = false
+      targetPhysical = primaryPhysical(PANEL_COUNT - 1)
     } else if (physical === TOTAL_PANELS - 1) {
-      isJumping.current = true
-      el.scrollTo({ left: START_INDEX * el.clientWidth, behavior: 'instant' })
-      activePhysicalRef.current = START_INDEX
-      setActivePhysical(START_INDEX)
-      isJumping.current = false
+      targetPhysical = START_INDEX
     }
+
+    if (targetPhysical === null) return
+
+    isJumping.current = true
+    const prevSnap = el.style.scrollSnapType
+    el.style.scrollSnapType = 'none'
+    el.scrollLeft = targetPhysical * el.clientWidth
+    activePhysicalRef.current = targetPhysical
+
+    requestAnimationFrame(() => {
+      el.style.scrollSnapType = prevSnap || ''
+      isJumping.current = false
+    })
   }, [])
 
   const settleScroll = useCallback(() => {
@@ -169,10 +172,10 @@ export default function StorageSwiper({ activeArea, onAreaChange, children }: Pr
   }, [scheduleSettle, scrollToPhysical, settleScroll, syncFromScroll])
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+    <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-[var(--paper)]">
       <div
         ref={scrollRef}
-        className="flex-1 flex overflow-x-auto snap-x snap-mandatory scrollbar-none min-h-0"
+        className="flex-1 flex overflow-x-auto snap-x snap-mandatory scrollbar-none min-h-0 bg-[var(--paper)] overscroll-x-contain"
         style={{ WebkitOverflowScrolling: 'touch', scrollBehavior: 'auto' }}
       >
         {Array.from({ length: TOTAL_PANELS }, (_, i) => {
@@ -181,7 +184,7 @@ export default function StorageSwiper({ activeArea, onAreaChange, children }: Pr
           return (
             <div
               key={`${STORAGE_AREAS[logical]}-${i}`}
-              className="w-full shrink-0 snap-start snap-always flex flex-col min-h-0 overflow-hidden"
+              className="w-full shrink-0 snap-start snap-always flex flex-col min-h-0 overflow-hidden bg-[var(--paper)]"
               aria-hidden={!isActive}
             >
               <StoragePanelActiveContext.Provider value={isActive}>

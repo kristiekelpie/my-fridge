@@ -30,6 +30,7 @@ export default function HomePage() {
   const [fullPageView, setFullPageView] = useState<FullPageView | null>(null)
   const [loading, setLoading] = useState(true)
   const [fetchError, setFetchError] = useState<string | null>(null)
+  const [kitchenNotesOpen, setKitchenNotesOpen] = useState(false)
 
   const areaItems = filterItemsByArea(items, activeArea)
   const totalItems = items.length
@@ -133,6 +134,8 @@ export default function HomePage() {
     onOpenExpiring: () => openFullPageView('expiring'),
   }
 
+  const showAddButton = !showForm && !kitchenNotesOpen
+
   return (
     <div className="fixed inset-0 flex flex-col paper">
       <button
@@ -197,7 +200,12 @@ export default function HomePage() {
         ) : (
           <DoorPhotosProvider>
             <StorageSwiper activeArea={activeArea} onAreaChange={setActiveArea}>
-              <FridgeView items={filterItemsByArea(items, 'fridge')} showSwipeHint {...sharedViewProps} />
+              <FridgeView
+                items={filterItemsByArea(items, 'fridge')}
+                showSwipeHint
+                onNotesOpenChange={setKitchenNotesOpen}
+                {...sharedViewProps}
+              />
               <CabinetHomeView area="pantry" items={filterItemsByArea(items, 'pantry')} {...sharedViewProps} />
               <CabinetHomeView area="cupboard" items={filterItemsByArea(items, 'cupboard')} {...sharedViewProps} />
               <CabinetHomeView area="wine_fridge" items={filterItemsByArea(items, 'wine_fridge')} {...sharedViewProps} />
@@ -206,6 +214,7 @@ export default function HomePage() {
         )}
       </main>
 
+      {showAddButton && (
       <button
         onClick={() => setShowForm(true)}
         className="fixed z-30 w-[72px] h-[72px] bg-stone-900 text-stone-50 rounded-full flex items-center justify-center active:scale-95 transition-transform border-[3px] border-stone-50"
@@ -218,6 +227,7 @@ export default function HomePage() {
       >
         <Plus size={34} strokeWidth={2.75} />
       </button>
+      )}
 
       {showForm && (
         <ItemForm
