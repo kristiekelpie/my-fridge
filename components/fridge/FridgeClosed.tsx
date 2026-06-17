@@ -3,12 +3,14 @@
 import DoorPolaroid, { PolaroidSlot } from './DoorPolaroid'
 import DoorNotesPaper from './DoorNotesPaper'
 import F15Magnet from './F15Magnet'
+import WeeklyMealPlannerMagnet from './WeeklyMealPlannerMagnet'
 import { MagneticPhrase, HELLO_CHEF_LETTERS, I_LOVE_YOU_LETTERS, I_LOVE_YOU_LETTERS_MOBILE } from './MagneticLetters'
 import type { MealNote, ShoppingItem } from '@/lib/types'
 
 interface Props {
   onOpen: () => void
   onOpenNotes: () => void
+  onOpenMealPlanner: () => void
   notes: MealNote[]
   shopping: ShoppingItem[]
   upperPhotoUrl: string | null
@@ -94,6 +96,7 @@ function SheenLayers() {
 export default function FridgeClosed({
   onOpen,
   onOpenNotes,
+  onOpenMealPlanner,
   notes,
   shopping,
   upperPhotoUrl,
@@ -222,22 +225,27 @@ export default function FridgeClosed({
           className="absolute inset-0 z-0 cursor-pointer rounded-lg"
           aria-label="Open fridge"
         />
+        <WeeklyMealPlannerMagnet
+          notes={notes}
+          onClick={onOpenMealPlanner}
+          style={{ top: '8%', left: '11%', transform: 'rotate(0.8deg)' }}
+        />
         <DoorPolaroid
           slot="upper"
           photoUrl={upperPhotoUrl}
           onUpload={onUploadPolaroid}
           magnetCorner="top-quarter"
           size="sm"
-          className="!z-10"
-          style={{ top: '18%', left: '28%', transform: 'rotate(-3deg) scale(1.1)' }}
+          className="!z-[22] max-sm:!left-[62%] max-sm:![transform:rotate(-8deg)_scale(0.98)]"
+          style={{ top: '50%', left: '58%', transform: 'rotate(-5deg) scale(0.98)' }}
         />
         <MagneticPhrase
           letters={HELLO_CHEF_LETTERS}
-          className="translate-x-[2px] translate-y-[14px] !z-[25]"
+          className="translate-x-[48px] -translate-y-[34px] sm:-translate-y-[64px] scale-[0.72] !z-[21] sm:!z-[25]"
         />
         <div
           className="absolute pointer-events-none z-[20] -rotate-[12deg]"
-          style={{ top: '66%', left: '8%' }}
+          style={{ top: '68%', left: '7%' }}
           aria-hidden
         >
           <F15Magnet size={51} className="max-sm:scale-[0.88]" />
@@ -274,7 +282,8 @@ export default function FridgeClosed({
           magnetCorner="top-left"
           magnetStyle={{ transform: 'translateX(0.7rem)' }}
           size="sm"
-          style={{ top: '8%', left: '9%', transform: 'rotate(-5deg) scale(1.1)' }}
+          className="max-sm:!top-[calc(8%+20px)]"
+          style={{ top: 'calc(8% + 40px)', left: '9%', transform: 'rotate(-5deg) scale(1.1)' }}
         />
 
         {/* Lined notes paper — top right */}
@@ -282,7 +291,7 @@ export default function FridgeClosed({
           onClick={onOpenNotes}
           notes={notes}
           shopping={shopping}
-          className="top-[15%] sm:top-[10%] left-[52%] scale-[0.924] sm:scale-[1.038] origin-top-left -rotate-6"
+          className="top-[15%] sm:top-[10%] left-[52%] scale-[0.85] sm:scale-[0.955] origin-top-left -rotate-6"
         />
 
         {/* Bottom row — two polaroids */}
@@ -291,10 +300,10 @@ export default function FridgeClosed({
           photoUrl={lowerPhotoUrl}
           onUpload={onUploadPolaroid}
           magnetCorner="top-left"
-          magnetStyle={{ transform: 'translateX(0.8rem)' }}
+          magnetStyle={{ left: '75%', transform: 'translateX(-50%)' }}
           size="sm"
           className="!z-10"
-          style={{ top: '43%', left: '10%', transform: 'rotate(4deg) scale(1.1)' }}
+          style={{ top: 'calc(43% + 20px)', left: '10%', transform: 'rotate(4deg) scale(1.1)' }}
         />
         <DoorPolaroid
           slot="right"
@@ -305,8 +314,8 @@ export default function FridgeClosed({
           className="!z-10 max-sm:!top-[59%]"
           style={{ top: '53%', left: '58%', transform: 'rotate(-4deg) scale(1.1)' }}
         />
-        <MagneticPhrase letters={I_LOVE_YOU_LETTERS} className="hidden sm:block !z-[25]" />
-        <MagneticPhrase letters={I_LOVE_YOU_LETTERS_MOBILE} className="sm:hidden !z-[25]" />
+        <MagneticPhrase letters={I_LOVE_YOU_LETTERS} className="hidden sm:block translate-y-[35px] !z-[25]" />
+        <MagneticPhrase letters={I_LOVE_YOU_LETTERS_MOBILE} className="sm:hidden translate-y-[35px] !z-[25]" />
       </div>
       </div>
     </div>

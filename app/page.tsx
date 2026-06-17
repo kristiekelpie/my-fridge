@@ -7,6 +7,7 @@ import FridgeView from '@/components/fridge/FridgeView'
 import ItemForm from '@/components/items/ItemForm'
 import HistoryView from '@/components/history/HistoryView'
 import MasterInventoryView from '@/components/fridge/MasterInventoryView'
+import WeeklyMealPlannerView from '@/components/kitchen/WeeklyMealPlannerView'
 import Sidebar from '@/components/sidebar/Sidebar'
 import StorageSwiper from '@/components/storage/StorageSwiper'
 import { DoorPhotosProvider } from '@/components/fridge/DoorPhotosContext'
@@ -15,7 +16,7 @@ import { filterItemsByArea, STORAGE_AREA_LABELS } from '@/lib/storageAreas'
 import { warmItemPhotoCache } from '@/lib/itemPhotoCache'
 import { Plus, Menu } from 'lucide-react'
 
-type FullPageView = 'history' | 'inventory' | 'master-inventory' | 'expiring'
+type FullPageView = 'history' | 'inventory' | 'master-inventory' | 'expiring' | 'weekly-planner'
 
 export default function HomePage() {
   const supabase = createClient()
@@ -178,6 +179,8 @@ export default function HomePage() {
             onEdit={handleEdit}
             onDelete={handleDelete}
           />
+        ) : fullPageView === 'weekly-planner' ? (
+          <WeeklyMealPlannerView onBack={() => setFullPageView(null)} />
         ) : fullPageView === 'inventory' ? (
           <MasterInventoryView
             items={areaItems}
@@ -201,7 +204,7 @@ export default function HomePage() {
             onDelete={handleDelete}
           />
         ) : (
-            <StorageSwiper activeArea={activeArea} onAreaChange={setActiveArea}>
+            <StorageSwiper activeArea={activeArea} onAreaChange={setActiveArea} lockNavigation={kitchenNotesOpen}>
               <FridgeView
                 items={filterItemsByArea(items, 'fridge')}
                 showSwipeHint
@@ -248,6 +251,7 @@ export default function HomePage() {
         onOpenInventory={() => openFullPageView('master-inventory')}
         onOpenExpiring={() => openFullPageView('expiring')}
         onOpenHistory={() => openFullPageView('history')}
+        onOpenWeeklyPlanner={() => openFullPageView('weekly-planner')}
       />
     </div>
     </DoorPhotosProvider>

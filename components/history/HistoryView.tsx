@@ -83,6 +83,19 @@ export default function HistoryView({ onBack, onAddToFridge }: Props) {
     setSelected(null)
   }
 
+  async function handleDeleteHistoryItem(item: FridgeItemSuggestion) {
+    const previous = historyItems
+    setBusy(true)
+    setHistoryItems(items => items.filter(historyItem => historyItem.id !== item.id))
+    setSelected(null)
+    const { error } = await supabase
+      .from('fridge_item_suggestions')
+      .delete()
+      .eq('id', item.id)
+    if (error) setHistoryItems(previous)
+    setBusy(false)
+  }
+
   return (
     <CategoryListPage
       title="History"
@@ -115,6 +128,14 @@ export default function HistoryView({ onBack, onAddToFridge }: Props) {
                 className="w-full bg-stone-900 text-white rounded-xl py-2.5 text-sm font-semibold disabled:opacity-50"
               >
                 Add to Shopping List
+              </button>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => handleDeleteHistoryItem(selected)}
+                className="w-full bg-red-100 text-red-800 rounded-xl py-2.5 text-sm font-semibold disabled:opacity-50 active:bg-red-200"
+              >
+                Delete from History
               </button>
               <button
                 type="button"

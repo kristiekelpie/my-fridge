@@ -9,6 +9,7 @@ interface Props {
   activeArea: StorageArea
   onAreaChange: (area: StorageArea) => void
   children: ReactNode[]
+  lockNavigation?: boolean
 }
 
 const PANEL_COUNT = STORAGE_AREAS.length
@@ -42,7 +43,7 @@ function nearestPhysical(logical: number, currentPhysical: number) {
     : clone
 }
 
-export default function StorageSwiper({ activeArea, onAreaChange, children }: Props) {
+export default function StorageSwiper({ activeArea, onAreaChange, children, lockNavigation = false }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const scrollEndTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const skipExternalScroll = useRef(false)
@@ -175,7 +176,11 @@ export default function StorageSwiper({ activeArea, onAreaChange, children }: Pr
     <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-[var(--paper)]">
       <div
         ref={scrollRef}
-        className="flex-1 flex overflow-x-auto snap-x snap-mandatory scrollbar-none min-h-0 bg-[var(--paper)] overscroll-x-contain"
+        className={`flex-1 flex min-h-0 bg-[var(--paper)] scrollbar-none overscroll-x-contain ${
+          lockNavigation
+            ? 'overflow-x-hidden touch-pan-y'
+            : 'overflow-x-auto snap-x snap-mandatory'
+        }`}
         style={{ WebkitOverflowScrolling: 'touch', scrollBehavior: 'auto' }}
       >
         {Array.from({ length: TOTAL_PANELS }, (_, i) => {
@@ -195,6 +200,7 @@ export default function StorageSwiper({ activeArea, onAreaChange, children }: Pr
         })}
       </div>
 
+      {!lockNavigation && (
       <div className="shrink-0 flex items-center justify-center gap-2 px-4 py-2 border-t border-stone-300/50 bg-[#E8E4D7]/80">
         {STORAGE_AREAS.map(area => {
           const selected = area === displayArea
@@ -215,6 +221,7 @@ export default function StorageSwiper({ activeArea, onAreaChange, children }: Pr
           )
         })}
       </div>
+      )}
     </div>
   )
 }

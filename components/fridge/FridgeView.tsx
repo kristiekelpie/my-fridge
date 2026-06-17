@@ -7,6 +7,7 @@ import FridgeClosed from './FridgeClosed'
 import FridgeInteriorOpen, { type FridgeSection } from './FridgeInteriorOpen'
 import ItemListByCategory from './ItemListByCategory'
 import KitchenNotesView from '@/components/kitchen/KitchenNotesView'
+import WeeklyMealPlannerView from '@/components/kitchen/WeeklyMealPlannerView'
 import { isSupabaseConfigured } from '@/lib/supabase/client'
 import { useDoorPhotos } from './DoorPhotosContext'
 import { FRIDGE_SECTION_LABELS } from '@/lib/storageAreas'
@@ -30,7 +31,7 @@ interface Props {
 }
 
 const FRIDGE_HEIGHT_CLASS =
-  'h-[min(calc(100dvh-6.5rem),calc(100dvh-env(safe-area-inset-bottom)-6.5rem),760px)] sm:h-[min(calc(100dvh-5rem),calc(100dvh-env(safe-area-inset-bottom)-5rem),640px)]'
+  'h-[min(calc(100dvh-6.5rem),calc(100dvh-env(safe-area-inset-bottom)-6.5rem),760px)] sm:h-[min(calc(100dvh-3.5rem),calc(100dvh-env(safe-area-inset-bottom)-3.5rem),710px)]'
 
 function filterBySection(items: HouseholdItem[], section: FridgeSection) {
   return section === 'freezer'
@@ -53,6 +54,7 @@ export default function FridgeView({
   const [isOpen, setIsOpen] = useState(false)
   const [selectedSection, setSelectedSection] = useState<FridgeSection | null>(null)
   const [kitchenNotesOpen, setKitchenNotesOpen] = useState(false)
+  const [weeklyPlannerOpen, setWeeklyPlannerOpen] = useState(false)
   const [notes, setNotes] = useState<MealNote[]>([])
   const [shopping, setShopping] = useState<ShoppingItem[]>([])
 
@@ -104,8 +106,8 @@ export default function FridgeView({
   }, [fetchNotes, fetchShopping, isActivePanel, supabase])
 
   useEffect(() => {
-    onNotesOpenChange?.(kitchenNotesOpen && isActivePanel)
-  }, [kitchenNotesOpen, isActivePanel, onNotesOpenChange])
+    onNotesOpenChange?.((kitchenNotesOpen || weeklyPlannerOpen) && isActivePanel)
+  }, [kitchenNotesOpen, weeklyPlannerOpen, isActivePanel, onNotesOpenChange])
 
   function handleSectionClick(section: FridgeSection) {
     setSelectedSection(section)
@@ -121,6 +123,10 @@ export default function FridgeView({
 
   if (kitchenNotesOpen) {
     return <KitchenNotesView onBack={() => setKitchenNotesOpen(false)} />
+  }
+
+  if (weeklyPlannerOpen) {
+    return <WeeklyMealPlannerView onBack={() => setWeeklyPlannerOpen(false)} />
   }
 
   if (selectedSection) {
@@ -204,7 +210,7 @@ export default function FridgeView({
         </div>
 
         <div className="relative shrink-0 mx-auto w-fit max-w-full overflow-visible">
-          <div className="absolute z-20 sm:hidden -rotate-6" style={{ top: '3%', left: '76%' }}>
+          <div className="absolute z-20 sm:hidden -rotate-6" style={{ top: '3%', left: '82%' }}>
             <InstockStamp totalItems={totalItems} compact onClick={onOpenInventory} />
           </div>
           <div
@@ -234,6 +240,7 @@ export default function FridgeView({
           <FridgeClosed
             onOpen={() => setIsOpen(true)}
             onOpenNotes={() => setKitchenNotesOpen(true)}
+              onOpenMealPlanner={() => setWeeklyPlannerOpen(true)}
             notes={notes}
             shopping={shopping}
             upperPhotoUrl={photos.upper}

@@ -48,14 +48,14 @@ export default function ItemCard({ item, onEdit, onDelete }: Props) {
                 decoding="async"
               />
               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-stone-900/85 via-stone-900/45 to-transparent pt-5 pb-1 px-1.5">
-                <span className="font-mono text-[8px] text-white font-bold uppercase tracking-wider line-clamp-2 leading-tight">
+                <span className="font-mono text-[9px] sm:text-[10px] text-white font-bold uppercase tracking-wider line-clamp-2 leading-tight">
                   {item.name}
                 </span>
               </div>
             </>
           ) : (
             <div className="w-full h-full flex flex-col items-center justify-center bg-stone-50 gap-1.5 px-1.5">
-              <span className="font-mono text-[8px] text-stone-600 font-bold uppercase tracking-wider text-center line-clamp-4 leading-tight">
+              <span className="font-mono text-[9px] sm:text-[10px] text-stone-600 font-bold uppercase tracking-wider text-center line-clamp-4 leading-tight">
                 {item.name}
               </span>
             </div>
@@ -71,7 +71,7 @@ export default function ItemCard({ item, onEdit, onDelete }: Props) {
         {/* Back face */}
         <div className="card-face card-back rounded-md bg-stone-50 border border-stone-900/90 shadow-sm p-2 flex flex-col min-h-0 overflow-hidden">
           <div className="min-h-0 flex-1 overflow-hidden">
-            <h3 className="font-mono text-[10px] font-bold uppercase tracking-wide text-stone-900 leading-tight line-clamp-2 mb-1">
+            <h3 className="font-mono text-[11px] sm:text-xs font-bold uppercase tracking-wide text-stone-900 leading-tight line-clamp-2 mb-1">
               {item.name}
             </h3>
             <span className={`inline-block font-mono text-[8px] font-bold uppercase tracking-wider px-1 py-0.5 rounded-sm border mb-1 ${statusCfg.bg} ${statusCfg.text} ${statusCfg.border}`}>

@@ -21,6 +21,7 @@ interface Props {
   onOpenInventory: () => void
   onOpenExpiring: () => void
   onOpenHistory: () => void
+  onOpenWeeklyPlanner: () => void
 }
 
 type Panel = 'main' | 'notes' | 'shopping'
@@ -61,6 +62,7 @@ export default function Sidebar({
   onOpenInventory,
   onOpenExpiring,
   onOpenHistory,
+  onOpenWeeklyPlanner,
 }: Props) {
   const supabase = createClient()
   const [panel, setPanel] = useState<Panel>('main')
@@ -310,16 +312,10 @@ export default function Sidebar({
         {panel === 'main' && (
           <div className="flex-1 p-4 space-y-2">
             <SidebarMenuButton
-              icon="/icons/sidebar-notes.png"
-              title="Meal Notes"
-              subtitle={`${notes.length} note${notes.length !== 1 ? 's' : ''}`}
-              onClick={() => setPanel('notes')}
-            />
-            <SidebarMenuButton
-              icon="/icons/sidebar-cart.png"
-              title="Shopping List"
-              subtitle={`${shopping.filter(i => !i.checked).length} remaining`}
-              onClick={() => setPanel('shopping')}
+              icon="/icons/sidebar-expiring.png"
+              title="Expiring Soon"
+              subtitle={`${expiringCount} item${expiringCount !== 1 ? 's' : ''}`}
+              onClick={onOpenExpiring}
             />
             <SidebarMenuButton
               icon="/icons/sidebar-inventory.png"
@@ -328,10 +324,22 @@ export default function Sidebar({
               onClick={onOpenInventory}
             />
             <SidebarMenuButton
-              icon="/icons/sidebar-expiring.png"
-              title="Expiring Soon"
-              subtitle={`${expiringCount} item${expiringCount !== 1 ? 's' : ''}`}
-              onClick={onOpenExpiring}
+              icon="/icons/sidebar-cart.png"
+              title="Shopping List"
+              subtitle={`${shopping.filter(i => !i.checked).length} remaining`}
+              onClick={() => setPanel('shopping')}
+            />
+            <SidebarMenuButton
+              icon="/icons/sidebar-meal-planner.png"
+              title="Weekly Meal Planner"
+              subtitle="Breakfast, lunch & dinner"
+              onClick={onOpenWeeklyPlanner}
+            />
+            <SidebarMenuButton
+              icon="/icons/sidebar-notes.png"
+              title="Meal Notes"
+              subtitle={`${notes.length} note${notes.length !== 1 ? 's' : ''}`}
+              onClick={() => setPanel('notes')}
             />
             <SidebarMenuButton
               icon="/icons/sidebar-history.png"

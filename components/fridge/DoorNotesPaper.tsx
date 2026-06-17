@@ -50,7 +50,7 @@ export default function DoorNotesPaper({ onClick, notes, shopping, className = '
           <HeartMagnet />
         </div>
         <div
-          className="w-[6rem] sm:w-[6.75rem] h-[calc(9.25rem-12px)] sm:h-[calc(9.75rem-12px)] bg-white shadow-[2px_4px_10px_rgba(0,0,0,0.15)] pt-3 px-1.5 pb-1 overflow-hidden"
+          className="w-[6rem] sm:w-[6.75rem] h-[calc(9.25rem-12px)] sm:h-[calc(9.75rem-12px)] bg-[#FAF7EF] shadow-[2px_4px_10px_rgba(0,0,0,0.15)] pt-3 px-1.5 pb-1 overflow-hidden"
           style={{
             backgroundImage: `repeating-linear-gradient(
               transparent,
@@ -63,7 +63,7 @@ export default function DoorNotesPaper({ onClick, notes, shopping, className = '
         >
           {/* Torn top edge */}
           <div
-            className="absolute top-0 left-0 right-0 h-2 bg-white"
+            className="absolute top-0 left-0 right-0 h-2 bg-[#FAF7EF]"
             style={{
               clipPath: 'polygon(0% 100%, 5% 0%, 12% 100%, 20% 20%, 28% 100%, 38% 10%, 48% 100%, 58% 15%, 68% 100%, 78% 5%, 88% 100%, 95% 20%, 100% 100%)',
             }}
