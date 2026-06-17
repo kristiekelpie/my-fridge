@@ -6,7 +6,9 @@ import { MealNote, ShoppingItem, Store, ShoppingCategory, SHOPPING_CATEGORY_LABE
 import { toggleShoppingItemChecked } from '@/lib/shoppingActions'
 import { fetchShoppingSuggestions, fetchFridgeSuggestions, upsertShoppingSuggestion, type ShoppingSuggestion } from '@/lib/suggestions'
 import SuggestionNameInput from '@/components/items/SuggestionNameInput'
-import { X, Trash2, ChevronRight } from 'lucide-react'
+import PhotoUploadField from '@/components/items/PhotoUploadField'
+import MealNotePhoto from '@/components/kitchen/MealNotePhoto'
+import { X, Trash2, ChevronRight, Plus } from 'lucide-react'
 
 const STORES: Store[] = ['Costco', 'Walmart', 'Albertsons', 'Any', 'Other']
 const CATEGORIES: ShoppingCategory[] = ['food', 'household', 'personal']
@@ -39,6 +41,9 @@ export default function Sidebar({
   const [historyCount, setHistoryCount] = useState(0)
   const [newNoteTitle, setNewNoteTitle] = useState('')
   const [newNoteContent, setNewNoteContent] = useState('')
+  const [newNotePhotoUrl, setNewNotePhotoUrl] = useState('')
+  const [uploadingNotePhoto, setUploadingNotePhoto] = useState(false)
+  const [showAddNoteForm, setShowAddNoteForm] = useState(false)
   const [newShoppingName, setNewShoppingName] = useState('')
   const [newShoppingStore, setNewShoppingStore] = useState<Store>('Any')
   const [newShoppingCategory, setNewShoppingCategory] = useState<ShoppingCategory>('food')
@@ -101,17 +106,32 @@ export default function Sidebar({
     }
   }, [open, fetchNotes, fetchShopping, fetchShoppingSuggestionsList, fetchHistoryCount, supabase])
 
+  useEffect(() => {
+    if (!open || panel !== 'notes') setShowAddNoteForm(false)
+  }, [open, panel])
+
+  function resetNoteForm() {
+    setNewNoteTitle('')
+    setNewNoteContent('')
+    setNewNotePhotoUrl('')
+  }
+
+  function closeAddNoteForm() {
+    setShowAddNoteForm(false)
+    resetNoteForm()
+  }
+
   async function addNote() {
     if (!newNoteTitle.trim() || !newNoteContent.trim()) return
     setSavingNote(true)
     const { error } = await supabase.from('meal_notes').insert({
       title: newNoteTitle.trim(),
       content: newNoteContent.trim(),
+      photo_url: newNotePhotoUrl || null,
     })
     setSavingNote(false)
     if (error) return
-    setNewNoteTitle('')
-    setNewNoteContent('')
+    closeAddNoteForm()
     await fetchNotes()
   }
 
@@ -275,8 +295,8 @@ export default function Sidebar({
 
         {/* Notes panel */}
         {panel === 'notes' && (
-          <div className="flex-1 flex flex-col min-h-0">
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          <div className="relative flex-1 flex flex-col min-h-0">
+            <div className="flex-1 overflow-y-auto p-4 pb-20 space-y-3">
               {notes.length === 0 && (
                 <p className="font-mono text-sm text-slate-400 text-center py-8 tracking-tight">No meal notes yet</p>
               )}
@@ -290,6 +310,7 @@ export default function Sidebar({
                     <Trash2 size={14} />
                   </button>
                   <h4 className="text-sm font-semibold text-slate-800 pr-6">{note.title}</h4>
+                  <MealNotePhoto photoUrl={note.photo_url} className="mt-2" />
                   <p className="text-xs text-slate-600 mt-1 whitespace-pre-wrap">{note.content}</p>
                   <p className="text-xs text-slate-400 mt-1.5">
                     {new Date(note.created_at).toLocaleDateString()}
@@ -297,31 +318,64 @@ export default function Sidebar({
                 </div>
               ))}
             </div>
-            <div className="p-4 border-t border-slate-200 shrink-0">
-              <div className="w-full space-y-2">
-              <input
-                type="text"
-                value={newNoteTitle}
-                onChange={e => setNewNoteTitle(e.target.value)}
-                placeholder="Title"
-                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <textarea
-                value={newNoteContent}
-                onChange={e => setNewNoteContent(e.target.value)}
-                placeholder="Note…"
-                rows={3}
-                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-              />
+
+            {!showAddNoteForm && (
               <button
-                onClick={addNote}
-                disabled={savingNote || !newNoteTitle.trim() || !newNoteContent.trim()}
-                className="w-full bg-stone-900 text-white rounded-xl py-2.5 text-sm font-semibold disabled:opacity-50"
+                type="button"
+                onClick={() => setShowAddNoteForm(true)}
+                className="absolute bottom-4 right-4 z-10 w-12 h-12 bg-stone-900 text-white rounded-full flex items-center justify-center active:scale-95 transition-transform shadow-lg border-2 border-white"
+                aria-label="Add meal note"
               >
-                Add Note
+                <Plus size={22} strokeWidth={2.5} />
               </button>
+            )}
+
+            {showAddNoteForm && (
+              <div className="absolute inset-0 z-20 flex flex-col bg-white">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 shrink-0">
+                  <h3 className="font-mono text-sm font-bold text-stone-900">New Note</h3>
+                  <button
+                    type="button"
+                    onClick={closeAddNoteForm}
+                    className="font-mono text-[10px] uppercase tracking-wider text-stone-500 px-2 py-1 active:text-stone-900"
+                  >
+                    Cancel
+                  </button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                  <PhotoUploadField
+                    photoUrl={newNotePhotoUrl}
+                    onPhotoUrlChange={setNewNotePhotoUrl}
+                    onUploadingChange={setUploadingNotePhoto}
+                    storageFolder="meal-notes"
+                  />
+                  <input
+                    type="text"
+                    value={newNoteTitle}
+                    onChange={e => setNewNoteTitle(e.target.value)}
+                    placeholder="Title"
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <textarea
+                    value={newNoteContent}
+                    onChange={e => setNewNoteContent(e.target.value)}
+                    placeholder="Note…"
+                    rows={5}
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  />
+                </div>
+                <div className="p-4 border-t border-slate-200 shrink-0">
+                  <button
+                    type="button"
+                    onClick={addNote}
+                    disabled={savingNote || uploadingNotePhoto || !newNoteTitle.trim() || !newNoteContent.trim()}
+                    className="w-full bg-stone-900 text-white rounded-xl py-2.5 text-sm font-semibold disabled:opacity-50"
+                  >
+                    {savingNote ? 'Saving…' : 'Add Note'}
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
 

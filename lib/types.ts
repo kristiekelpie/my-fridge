@@ -73,6 +73,7 @@ export interface FridgeDoor {
   upper_photo_url: string | null
   lower_photo_url: string | null
   left_photo_url: string | null
+  right_photo_url: string | null
   updated_at: string
 }
 
@@ -82,6 +83,7 @@ export interface MealNote {
   updated_at: string
   title: string
   content: string
+  photo_url?: string | null
 }
 
 export interface ShoppingItem {

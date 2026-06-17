@@ -7,6 +7,8 @@ import { toggleShoppingItemChecked } from '@/lib/shoppingActions'
 import { fetchShoppingSuggestions, upsertShoppingSuggestion, type ShoppingSuggestion } from '@/lib/suggestions'
 import SuggestionNameInput from '@/components/items/SuggestionNameInput'
 import ConstrainedPageShell from '@/components/layout/ConstrainedPageShell'
+import PhotoUploadField from '@/components/items/PhotoUploadField'
+import MealNotePhoto from '@/components/kitchen/MealNotePhoto'
 import { ChevronLeft, Trash2, Pencil } from 'lucide-react'
 
 const STORES: Store[] = ['Costco', 'Walmart', 'Albertsons', 'Any', 'Other']
@@ -25,9 +27,12 @@ export default function KitchenNotesView({ onBack }: Props) {
   const [shopping, setShopping] = useState<ShoppingItem[]>([])
   const [newNoteTitle, setNewNoteTitle] = useState('')
   const [newNoteContent, setNewNoteContent] = useState('')
+  const [newNotePhotoUrl, setNewNotePhotoUrl] = useState('')
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
   const [editNoteTitle, setEditNoteTitle] = useState('')
   const [editNoteContent, setEditNoteContent] = useState('')
+  const [editNotePhotoUrl, setEditNotePhotoUrl] = useState('')
+  const [uploadingNotePhoto, setUploadingNotePhoto] = useState(false)
   const [newShoppingName, setNewShoppingName] = useState('')
   const [newShoppingStore, setNewShoppingStore] = useState<Store>('Any')
   const [newShoppingCategory, setNewShoppingCategory] = useState<ShoppingCategory>('food')
@@ -102,14 +107,20 @@ export default function KitchenNotesView({ onBack }: Props) {
     const { error: insertError } = await supabase.from('meal_notes').insert({
       title: newNoteTitle.trim(),
       content: newNoteContent.trim(),
+      photo_url: newNotePhotoUrl || null,
     })
     if (insertError) {
-      setError(insertError.message)
+      setError(
+        insertError.message.includes('photo_url')
+          ? 'Save failed: run supabase-meal-notes-photo.sql in Supabase → SQL Editor.'
+          : insertError.message
+      )
       setSavingNote(false)
       return
     }
     setNewNoteTitle('')
     setNewNoteContent('')
+    setNewNotePhotoUrl('')
     await fetchNotes()
     setSavingNote(false)
   }
@@ -118,6 +129,12 @@ export default function KitchenNotesView({ onBack }: Props) {
     setEditingNoteId(note.id)
     setEditNoteTitle(note.title)
     setEditNoteContent(note.content)
+    setEditNotePhotoUrl(note.photo_url ?? '')
+  }
+
+  function cancelEditNote() {
+    setEditingNoteId(null)
+    setEditNotePhotoUrl('')
   }
 
   async function saveEditNote() {
@@ -126,14 +143,24 @@ export default function KitchenNotesView({ onBack }: Props) {
     setError(null)
     const { error: updateError } = await supabase
       .from('meal_notes')
-      .update({ title: editNoteTitle.trim(), content: editNoteContent.trim(), updated_at: new Date().toISOString() })
+      .update({
+        title: editNoteTitle.trim(),
+        content: editNoteContent.trim(),
+        photo_url: editNotePhotoUrl || null,
+        updated_at: new Date().toISOString(),
+      })
       .eq('id', editingNoteId)
     if (updateError) {
-      setError(updateError.message)
+      setError(
+        updateError.message.includes('photo_url')
+          ? 'Save failed: run supabase-meal-notes-photo.sql in Supabase → SQL Editor.'
+          : updateError.message
+      )
       setSavingNote(false)
       return
     }
     setEditingNoteId(null)
+    setEditNotePhotoUrl('')
     await fetchNotes()
     setSavingNote(false)
   }
@@ -250,6 +277,13 @@ export default function KitchenNotesView({ onBack }: Props) {
               <div key={note.id} className="bg-stone-50 border border-stone-900/90 shadow-sm rounded-xl p-3 relative">
                 {editingNoteId === note.id ? (
                   <div className="space-y-2 pr-1">
+                    <PhotoUploadField
+                      photoUrl={editNotePhotoUrl}
+                      onPhotoUrlChange={setEditNotePhotoUrl}
+                      onError={setError}
+                      onUploadingChange={setUploadingNotePhoto}
+                      storageFolder="meal-notes"
+                    />
                     <input
                       type="text"
                       value={editNoteTitle}
@@ -263,10 +297,10 @@ export default function KitchenNotesView({ onBack }: Props) {
                       className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                     />
                     <div className="flex gap-2">
-                      <button type="button" onClick={saveEditNote} className="flex-1 py-2 bg-stone-900 text-white rounded-xl text-sm font-semibold">
+                      <button type="button" onClick={saveEditNote} disabled={savingNote || uploadingNotePhoto} className="flex-1 py-2 bg-stone-900 text-white rounded-xl text-sm font-semibold disabled:opacity-50">
                         Save
                       </button>
-                      <button type="button" onClick={() => setEditingNoteId(null)} className="flex-1 py-2 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700">
+                      <button type="button" onClick={cancelEditNote} className="flex-1 py-2 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700">
                         Cancel
                       </button>
                     </div>
@@ -282,6 +316,7 @@ export default function KitchenNotesView({ onBack }: Props) {
                       </button>
                     </div>
                     <h4 className="text-sm font-semibold text-slate-800 pr-6">{note.title}</h4>
+                    <MealNotePhoto photoUrl={note.photo_url} className="mt-2" />
                     <p className="text-xs text-slate-600 mt-1 whitespace-pre-wrap">{note.content}</p>
                     <p className="text-xs text-slate-400 mt-1.5">
                       {new Date(note.created_at).toLocaleDateString()}
@@ -293,6 +328,13 @@ export default function KitchenNotesView({ onBack }: Props) {
           </div>
           <div className="p-4 border-t border-slate-200 shrink-0">
             <div className="w-full space-y-2">
+              <PhotoUploadField
+                photoUrl={newNotePhotoUrl}
+                onPhotoUrlChange={setNewNotePhotoUrl}
+                onError={setError}
+                onUploadingChange={setUploadingNotePhoto}
+                storageFolder="meal-notes"
+              />
               <input
                 type="text"
                 value={newNoteTitle}
@@ -310,7 +352,7 @@ export default function KitchenNotesView({ onBack }: Props) {
               <button
                 type="button"
                 onClick={addNote}
-                disabled={savingNote || !newNoteTitle.trim() || !newNoteContent.trim()}
+                disabled={savingNote || uploadingNotePhoto || !newNoteTitle.trim() || !newNoteContent.trim()}
                 className="w-full bg-stone-900 text-white rounded-xl py-2.5 text-sm font-semibold disabled:opacity-50"
               >
                 Add Note

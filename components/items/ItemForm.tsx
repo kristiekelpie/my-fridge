@@ -5,12 +5,10 @@ import { createClient, isSupabaseConfigured } from '@/lib/supabase/client'
 import { HouseholdItem, Category, Location, StorageArea, CATEGORY_LABELS, LOCATION_LABELS, CATEGORIES, normalizeCategory, getCookedFoodDefaultExpiryDate } from '@/lib/types'
 import { LOCATIONS_BY_AREA, STORAGE_AREA_LABELS, getDefaultLocation } from '@/lib/storageAreas'
 import { fetchFridgeSuggestions, upsertFridgeSuggestion, type FridgeItemSuggestion } from '@/lib/suggestions'
-import { dataUrlToBlob } from '@/lib/doorPhotos'
-import { seedItemPhotoCache } from '@/lib/itemPhotoCache'
 import SuggestionNameInput from '@/components/items/SuggestionNameInput'
-import PhotoCropModal from '@/components/items/PhotoCropModal'
+import PhotoUploadField from '@/components/items/PhotoUploadField'
 import { DESKTOP_PAGE_COLUMN_CLASS } from '@/components/layout/ConstrainedPageShell'
-import { Image as ImageIcon, Loader2, ChevronLeft, Upload } from 'lucide-react'
+import { ChevronLeft } from 'lucide-react'
 
 interface Props {
   initialItem?: Partial<HouseholdItem>
@@ -52,8 +50,6 @@ export default function ItemForm({ initialItem, defaultLocation, storageArea, on
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [suggestions, setSuggestions] = useState<FridgeItemSuggestion[]>([])
-  const [cropSrc, setCropSrc] = useState<string | null>(null)
-  const fileRef = useRef<HTMLInputElement>(null)
   const expiryEditedRef = useRef(!!initialItem?.expiry_date)
 
   const isEdit = !!initialItem?.id
@@ -72,52 +68,6 @@ export default function ItemForm({ initialItem, defaultLocation, storageArea, on
   useEffect(() => {
     loadSuggestions()
   }, [loadSuggestions])
-
-  async function uploadPhotoDataUrl(dataUrl: string) {
-    setPhotoUrl(dataUrl)
-
-    if (!isSupabaseConfigured()) {
-      setError('Supabase is not configured — photos cannot sync to other devices.')
-      return
-    }
-
-    setUploading(true)
-    try {
-      const blob = await dataUrlToBlob(dataUrl)
-      const path = `items/${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`
-      const { error: uploadError } = await supabase.storage
-        .from('item-photos')
-        .upload(path, blob, { contentType: 'image/jpeg' })
-      if (uploadError) throw uploadError
-      const { data } = supabase.storage.from('item-photos').getPublicUrl(path)
-      seedItemPhotoCache(data.publicUrl, dataUrl)
-      setPhotoUrl(data.publicUrl)
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Upload failed')
-    } finally {
-      setUploading(false)
-    }
-  }
-
-  function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setError(null)
-    const objectUrl = URL.createObjectURL(file)
-    setCropSrc(objectUrl)
-    if (fileRef.current) fileRef.current.value = ''
-  }
-
-  function handleCropCancel() {
-    if (cropSrc) URL.revokeObjectURL(cropSrc)
-    setCropSrc(null)
-  }
-
-  async function handleCropConfirm(dataUrl: string) {
-    if (cropSrc) URL.revokeObjectURL(cropSrc)
-    setCropSrc(null)
-    await uploadPhotoDataUrl(dataUrl)
-  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -171,14 +121,6 @@ export default function ItemForm({ initialItem, defaultLocation, storageArea, on
   }
 
   return (
-    <>
-    {cropSrc && (
-      <PhotoCropModal
-        imageSrc={cropSrc}
-        onConfirm={handleCropConfirm}
-        onCancel={handleCropCancel}
-      />
-    )}
     <div className="fixed inset-0 z-50 flex flex-col paper sm:items-center sm:px-4 sm:bg-stone-400/10">
       <div
         className={`${DESKTOP_PAGE_COLUMN_CLASS} sm:max-h-[calc(100dvh-2rem)] sm:my-4 sm:rounded-2xl sm:border sm:border-stone-300/50 sm:shadow-lg sm:overflow-hidden`}
@@ -205,50 +147,12 @@ export default function ItemForm({ initialItem, defaultLocation, storageArea, on
 
       <form id="item-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4 min-w-0">
         {/* Photo */}
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">Photo</label>
-          <div className="flex gap-3 items-center">
-            <div className="relative w-20 h-20 rounded-xl border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden bg-slate-50 shrink-0">
-              {photoUrl ? (
-                <img src={photoUrl} alt="item" className="w-full h-full object-cover" loading="eager" />
-              ) : (
-                <ImageIcon size={24} className="text-slate-300" />
-              )}
-              {uploading && (
-                <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
-                  <Loader2 size={18} className="animate-spin text-stone-600" />
-                </div>
-              )}
-            </div>
-            <div className="flex flex-col gap-2">
-              <button
-                type="button"
-                onClick={() => fileRef.current?.click()}
-                disabled={uploading}
-                className="flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-xl text-sm font-medium text-slate-700 active:bg-slate-200 disabled:opacity-50"
-              >
-                {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
-                {uploading ? 'Uploading…' : 'Upload'}
-              </button>
-              {photoUrl && (
-                <button
-                  type="button"
-                  onClick={() => setPhotoUrl('')}
-                  className="text-xs text-red-500 text-left"
-                >
-                  Remove photo
-                </button>
-              )}
-            </div>
-          </div>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            onChange={handlePhotoSelect}
-            className="hidden"
-          />
-        </div>
+        <PhotoUploadField
+          photoUrl={photoUrl}
+          onPhotoUrlChange={setPhotoUrl}
+          onError={setError}
+          onUploadingChange={setUploading}
+        />
 
         {/* Name */}
         <div className="min-w-0">
@@ -351,6 +255,5 @@ export default function ItemForm({ initialItem, defaultLocation, storageArea, on
       </div>
       </div>
     </div>
-    </>
   )
 }

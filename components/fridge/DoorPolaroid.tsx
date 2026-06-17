@@ -3,14 +3,16 @@
 import { useState, useRef } from 'react'
 import { Loader2 } from 'lucide-react'
 import HeartMagnet from './HeartMagnet'
+import { useDoorPhotoDisplay } from '@/components/fridge/useDoorPhotoDisplay'
 
-export type PolaroidSlot = 'upper' | 'lower' | 'left'
+export type PolaroidSlot = 'upper' | 'lower' | 'left' | 'right'
 
 interface Props {
   slot: PolaroidSlot
   photoUrl: string | null
   onUpload: (slot: PolaroidSlot, file: File) => Promise<void>
   magnetCorner?: 'top-left' | 'top-right' | 'top-quarter' | 'top-center'
+  size?: 'sm' | 'md'
   className?: string
   style?: React.CSSProperties
 }
@@ -20,12 +22,14 @@ export default function DoorPolaroid({
   photoUrl,
   onUpload,
   magnetCorner = 'top-right',
+  size = 'md',
   className = '',
   style,
 }: Props) {
   const fileRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
+  const displaySrc = useDoorPhotoDisplay(photoUrl)
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -50,6 +54,11 @@ export default function DoorPolaroid({
         : magnetCorner === 'top-center'
           ? 'absolute -top-1.5 left-1/2 -translate-x-1/2 z-30 pointer-events-none'
           : 'absolute -top-1.5 -right-1.5 z-30 pointer-events-none'
+
+  const frameClass =
+    size === 'sm'
+      ? 'relative w-[3.65rem] h-[3.45rem] sm:w-[4.1rem] sm:h-[3.85rem] bg-stone-100 overflow-hidden'
+      : 'relative w-[4.5rem] h-[4.25rem] sm:w-[5rem] sm:h-[4.75rem] bg-stone-100 overflow-hidden'
 
   return (
     <>
@@ -78,14 +87,15 @@ export default function DoorPolaroid({
             <HeartMagnet size={14} />
           </div>
           <div className="bg-white p-1 pb-3 shadow-[2px_4px_12px_rgba(0,0,0,0.18)]">
-            <div className="relative w-[4.5rem] h-[4.25rem] sm:w-[5rem] sm:h-[4.75rem] bg-stone-100 overflow-hidden">
-              {photoUrl ? (
+            <div className={frameClass}>
+              {displaySrc ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={photoUrl}
+                  src={displaySrc}
                   alt=""
                   className="w-full h-full object-cover"
                   loading="eager"
+                  decoding="async"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-stone-50 to-stone-200/80">

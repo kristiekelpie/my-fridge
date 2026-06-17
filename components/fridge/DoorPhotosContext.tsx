@@ -5,16 +5,20 @@ import {
   useContext,
   useState,
   useEffect,
-  useLayoutEffect,
   useCallback,
   type ReactNode,
 } from 'react'
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/client'
 import { fetchDoorPhotoUrls, uploadDoorPhoto, type DoorPhotoUrls } from '@/lib/fridgeDoor'
 import { getLocalDoorPhotos } from '@/lib/doorPhotos'
+import { warmDoorPhotoCacheFromSlots } from '@/lib/doorPhotoCache'
 import type { PolaroidSlot } from './DoorPolaroid'
 
-const EMPTY: DoorPhotoUrls = { upper: null, lower: null, left: null }
+const EMPTY: DoorPhotoUrls = { upper: null, lower: null, left: null, right: null }
+
+function urlsEqual(a: DoorPhotoUrls, b: DoorPhotoUrls) {
+  return a.upper === b.upper && a.lower === b.lower && a.left === b.left && a.right === b.right
+}
 
 interface ContextValue {
   photos: DoorPhotoUrls
@@ -25,23 +29,24 @@ const DoorPhotosContext = createContext<ContextValue | null>(null)
 
 export function DoorPhotosProvider({ children }: { children: ReactNode }) {
   const supabase = createClient()
-  const [photos, setPhotos] = useState<DoorPhotoUrls>(EMPTY)
-  const [hydrated, setHydrated] = useState(false)
-
-  // Show cached polaroids before paint — avoids blank flash when swiping back.
-  useLayoutEffect(() => {
-    setPhotos(getLocalDoorPhotos())
-    setHydrated(true)
-  }, [])
+  const [photos, setPhotos] = useState<DoorPhotoUrls>(() => {
+    if (typeof window === 'undefined') return EMPTY
+    const local = getLocalDoorPhotos()
+    warmDoorPhotoCacheFromSlots(local)
+    return local
+  })
 
   const refresh = useCallback(async () => {
     const urls = await fetchDoorPhotoUrls()
-    setPhotos(urls)
+    setPhotos(prev => (urlsEqual(prev, urls) ? prev : urls))
+    warmDoorPhotoCacheFromSlots(urls)
   }, [])
 
   useEffect(() => {
-    if (!hydrated) return
+    warmDoorPhotoCacheFromSlots(photos)
+  }, [photos])
 
+  useEffect(() => {
     refresh()
 
     if (!isSupabaseConfigured()) return
@@ -54,7 +59,7 @@ export function DoorPhotosProvider({ children }: { children: ReactNode }) {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [hydrated, refresh, supabase])
+  }, [refresh, supabase])
 
   const uploadPhoto = useCallback(async (slot: PolaroidSlot, file: File) => {
     const url = await uploadDoorPhoto(slot, file)

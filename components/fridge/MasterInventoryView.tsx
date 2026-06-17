@@ -219,18 +219,25 @@ export default function MasterInventoryView({ items, onBack, onEdit, onDelete }:
             )
             if (sectionItems.length === 0) return null
 
-            return (
-              <div key={area} className="col-span-3 mb-3 last:mb-0">
+            const grouped = area === 'fridge'
+              ? [
+                  { label: 'FREEZER', items: sectionItems.filter(item => item.location === 'freezer') },
+                  { label: 'FRIDGE', items: sectionItems.filter(item => item.location !== 'freezer') },
+                ].filter(group => group.items.length > 0)
+              : [{ label: STORAGE_AREA_LABELS[area], items: sectionItems }]
+
+            return grouped.map(group => (
+              <div key={`${area}-${group.label}`} className="col-span-3 mb-3 last:mb-0">
                 <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-stone-500 mb-2 px-0.5">
-                  {STORAGE_AREA_LABELS[area]}
+                  {group.label}
                 </p>
                 <div className="grid grid-cols-3 gap-2">
-                  {sectionItems.map(item => (
+                  {group.items.map(item => (
                     <ItemCard key={item.id} item={item} onEdit={onEdit} onDelete={onDelete} />
                   ))}
                 </div>
               </div>
-            )
+            ))
           })}
         </CollapsibleCategorySection>
       ))}

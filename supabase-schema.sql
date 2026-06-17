@@ -26,7 +26,8 @@ create table if not exists meal_notes (
   created_at timestamptz default now() not null,
   updated_at timestamptz default now() not null,
   title text not null,
-  content text not null
+  content text not null,
+  photo_url text
 );
 
 -- Create shopping_items table
@@ -137,13 +138,14 @@ create table if not exists fridge_door (
   upper_photo_url text,
   lower_photo_url text,
   left_photo_url text,
+  right_photo_url text,
   updated_at timestamptz default now() not null
 );
 
 insert into fridge_door (id) values (1) on conflict (id) do nothing;
 
--- If table already exists without left_photo_url:
--- alter table fridge_door add column if not exists left_photo_url text;
+-- If table already exists without right_photo_url:
+-- alter table fridge_door add column if not exists right_photo_url text;
 
 alter table fridge_door enable row level security;
 

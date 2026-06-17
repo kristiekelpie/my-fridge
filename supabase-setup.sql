@@ -72,10 +72,12 @@ create table if not exists fridge_door (
   upper_photo_url text,
   lower_photo_url text,
   left_photo_url text,
+  right_photo_url text,
   updated_at timestamptz default now() not null
 );
 
 alter table fridge_door add column if not exists left_photo_url text;
+alter table fridge_door add column if not exists right_photo_url text;
 
 insert into fridge_door (id) values (1) on conflict (id) do nothing;
 

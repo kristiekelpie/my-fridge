@@ -22,6 +22,31 @@ export const STORAGE_AREA_HEADING: Record<StorageArea, string> = {
   wine_fridge: 'WINE FRIDGE',
 }
 
+export const FRIDGE_SECTION_LABELS = {
+  freezer: 'FREEZER',
+  fridge: 'FRIDGE',
+} as const
+
+export type FridgeSectionKey = keyof typeof FRIDGE_SECTION_LABELS
+
+const sortByExpiry = (a: HouseholdItem, b: HouseholdItem) =>
+  new Date(a.expiry_date).getTime() - new Date(b.expiry_date).getTime()
+
+export function groupFridgeItemsBySection(items: HouseholdItem[]) {
+  const sections: StorageAreaListSection[] = []
+  const freezerItems = items.filter(item => item.location === 'freezer').sort(sortByExpiry)
+  const fridgeItems = items.filter(item => item.location !== 'freezer').sort(sortByExpiry)
+
+  if (freezerItems.length > 0) {
+    sections.push({ key: 'freezer', label: FRIDGE_SECTION_LABELS.freezer, items: freezerItems })
+  }
+  if (fridgeItems.length > 0) {
+    sections.push({ key: 'fridge', label: FRIDGE_SECTION_LABELS.fridge, items: fridgeItems })
+  }
+
+  return sections
+}
+
 export const FRIDGE_LOCATIONS: Location[] = [
   'freezer',
   'shelf1',
@@ -81,7 +106,9 @@ export function groupItemsByStorageArea(items: HouseholdItem[]): StorageAreaList
     const locations = LOCATIONS_BY_AREA[area]
     let sections: StorageAreaListSection[]
 
-    if (locations.length === 1) {
+    if (area === 'fridge') {
+      sections = groupFridgeItemsBySection(areaItems)
+    } else if (locations.length === 1) {
       sections = groupItemsByCategory(areaItems).map(({ category, items: categoryItems }) => ({
         key: category,
         label: CATEGORY_LABELS[category],
@@ -95,9 +122,7 @@ export function groupItemsByStorageArea(items: HouseholdItem[]): StorageAreaList
           label: LOCATION_LABELS[location],
           items: areaItems
             .filter(item => item.location === location)
-            .sort(
-              (a, b) => new Date(a.expiry_date).getTime() - new Date(b.expiry_date).getTime()
-            ),
+            .sort(sortByExpiry),
         }))
         .filter(section => section.items.length > 0)
     }

@@ -8,6 +8,7 @@ import ItemForm from '@/components/items/ItemForm'
 import HistoryView from '@/components/history/HistoryView'
 import MasterInventoryView from '@/components/fridge/MasterInventoryView'
 import ItemListByCategory from '@/components/fridge/ItemListByCategory'
+import ItemListByFridgeSection from '@/components/fridge/ItemListByFridgeSection'
 import ItemListByStorageArea from '@/components/fridge/ItemListByStorageArea'
 import Sidebar from '@/components/sidebar/Sidebar'
 import StorageSwiper from '@/components/storage/StorageSwiper'
@@ -137,6 +138,7 @@ export default function HomePage() {
   const showAddButton = !showForm && !kitchenNotesOpen
 
   return (
+    <DoorPhotosProvider>
     <div className="fixed inset-0 flex flex-col paper">
       <button
         onClick={() => setSidebarOpen(true)}
@@ -180,14 +182,25 @@ export default function HomePage() {
             onDelete={handleDelete}
           />
         ) : fullPageView === 'inventory' ? (
-          <ItemListByCategory
-            title={inventoryTitle}
-            subtitle={`${areaItems.length} item${areaItems.length !== 1 ? 's' : ''} — grouped by category`}
-            items={areaItems}
-            onBack={() => setFullPageView(null)}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-          />
+          activeArea === 'fridge' ? (
+            <ItemListByFridgeSection
+              title={inventoryTitle}
+              subtitle={`${areaItems.length} item${areaItems.length !== 1 ? 's' : ''} — freezer & fridge`}
+              items={areaItems}
+              onBack={() => setFullPageView(null)}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
+          ) : (
+            <ItemListByCategory
+              title={inventoryTitle}
+              subtitle={`${areaItems.length} item${areaItems.length !== 1 ? 's' : ''} — grouped by category`}
+              items={areaItems}
+              onBack={() => setFullPageView(null)}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
+          )
         ) : fullPageView === 'expiring' ? (
           <ItemListByStorageArea
             title="Expiring Soon"
@@ -198,7 +211,6 @@ export default function HomePage() {
             onDelete={handleDelete}
           />
         ) : (
-          <DoorPhotosProvider>
             <StorageSwiper activeArea={activeArea} onAreaChange={setActiveArea}>
               <FridgeView
                 items={filterItemsByArea(items, 'fridge')}
@@ -210,7 +222,6 @@ export default function HomePage() {
               <CabinetHomeView area="cupboard" items={filterItemsByArea(items, 'cupboard')} {...sharedViewProps} />
               <CabinetHomeView area="wine_fridge" items={filterItemsByArea(items, 'wine_fridge')} {...sharedViewProps} />
             </StorageSwiper>
-          </DoorPhotosProvider>
         )}
       </main>
 
@@ -249,5 +260,6 @@ export default function HomePage() {
         onOpenHistory={() => openFullPageView('history')}
       />
     </div>
+    </DoorPhotosProvider>
   )
 }

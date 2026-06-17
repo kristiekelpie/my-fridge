@@ -4,12 +4,14 @@ const KEYS: Record<PolaroidSlot, string> = {
   upper: 'fridge-door-upper',
   lower: 'fridge-door-lower',
   left: 'fridge-door-left',
+  right: 'fridge-door-right',
 }
 
 const SLOT_COLUMN: Record<PolaroidSlot, string> = {
   upper: 'upper_photo_url',
   lower: 'lower_photo_url',
   left: 'left_photo_url',
+  right: 'right_photo_url',
 }
 
 export function getSlotColumn(slot: PolaroidSlot): string {
@@ -35,6 +37,7 @@ export function getLocalDoorPhotos(): Record<PolaroidSlot, string | null> {
     upper: getLocalDoorPhoto('upper'),
     lower: getLocalDoorPhoto('lower'),
     left: getLocalDoorPhoto('left'),
+    right: getLocalDoorPhoto('right'),
   }
 }
 

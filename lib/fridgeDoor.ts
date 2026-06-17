@@ -8,23 +8,27 @@ import {
   fileToResizedDataUrl,
   dataUrlToBlob,
 } from '@/lib/doorPhotos'
+import { seedDoorPhotoCache, warmDoorPhotoCacheFromSlots } from '@/lib/doorPhotoCache'
 import type { FridgeDoor } from '@/lib/types'
 
 export type DoorPhotoUrls = Record<PolaroidSlot, string | null>
 
-const EMPTY: DoorPhotoUrls = { upper: null, lower: null, left: null }
+const EMPTY: DoorPhotoUrls = { upper: null, lower: null, left: null, right: null }
 
-function rowToUrls(row: Pick<FridgeDoor, 'upper_photo_url' | 'lower_photo_url' | 'left_photo_url'> | null): DoorPhotoUrls {
+function rowToUrls(
+  row: Pick<FridgeDoor, 'upper_photo_url' | 'lower_photo_url' | 'left_photo_url' | 'right_photo_url'> | null
+): DoorPhotoUrls {
   if (!row) return { ...EMPTY }
   return {
     upper: row.upper_photo_url ?? null,
     lower: row.lower_photo_url ?? null,
     left: row.left_photo_url ?? null,
+    right: row.right_photo_url ?? null,
   }
 }
 
 function cacheUrls(urls: DoorPhotoUrls) {
-  for (const slot of ['upper', 'lower', 'left'] as PolaroidSlot[]) {
+  for (const slot of ['upper', 'lower', 'left', 'right'] as PolaroidSlot[]) {
     if (urls[slot]) setLocalDoorPhoto(slot, urls[slot]!)
   }
 }
@@ -38,7 +42,7 @@ export async function fetchDoorPhotoUrls(): Promise<DoorPhotoUrls> {
   const supabase = createClient()
   const { data, error } = await supabase
     .from('fridge_door')
-    .select('upper_photo_url, lower_photo_url, left_photo_url')
+    .select('upper_photo_url, lower_photo_url, left_photo_url, right_photo_url')
     .eq('id', 1)
     .maybeSingle()
 
@@ -49,6 +53,7 @@ export async function fetchDoorPhotoUrls(): Promise<DoorPhotoUrls> {
 
   const urls = rowToUrls(data)
   cacheUrls(urls)
+  warmDoorPhotoCacheFromSlots(urls)
   return urls
 }
 
@@ -57,6 +62,7 @@ export async function uploadDoorPhoto(slot: PolaroidSlot, file: File): Promise<s
 
   if (!isSupabaseConfigured()) {
     setLocalDoorPhoto(slot, dataUrl)
+    seedDoorPhotoCache(dataUrl, dataUrl)
     return dataUrl
   }
 
@@ -91,5 +97,6 @@ export async function uploadDoorPhoto(slot: PolaroidSlot, file: File): Promise<s
   }
 
   setLocalDoorPhoto(slot, publicUrl)
+  seedDoorPhotoCache(publicUrl, dataUrl)
   return publicUrl
 }

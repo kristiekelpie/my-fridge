@@ -7,13 +7,13 @@ import type { MealNote, ShoppingItem } from '@/lib/types'
 
 interface Props {
   onOpen: () => void
-  onOpenFreezer: () => void
   onOpenNotes: () => void
   notes: MealNote[]
   shopping: ShoppingItem[]
   upperPhotoUrl: string | null
   lowerPhotoUrl: string | null
   leftPhotoUrl: string | null
+  rightPhotoUrl: string | null
   onUploadPolaroid: (slot: PolaroidSlot, file: File) => Promise<void>
   className?: string
 }
@@ -92,13 +92,13 @@ function SheenLayers() {
 
 export default function FridgeClosed({
   onOpen,
-  onOpenFreezer,
   onOpenNotes,
   notes,
   shopping,
   upperPhotoUrl,
   lowerPhotoUrl,
   leftPhotoUrl,
+  rightPhotoUrl,
   onUploadPolaroid,
   className = '',
 }: Props) {
@@ -217,21 +217,22 @@ export default function FridgeClosed({
       >
         <button
           type="button"
-          onClick={onOpenFreezer}
+          onClick={onOpen}
           className="absolute inset-0 z-0 cursor-pointer rounded-lg"
-          aria-label="View freezer items"
+          aria-label="Open fridge"
         />
         <DoorPolaroid
           slot="upper"
           photoUrl={upperPhotoUrl}
           onUpload={onUploadPolaroid}
           magnetCorner="top-quarter"
+          size="sm"
           className="!z-10"
-          style={{ top: '22%', left: '50%', transform: 'translateX(-50%) rotate(-3deg)' }}
+          style={{ top: '18%', left: '34%', transform: 'rotate(-3deg)' }}
         />
         <MagneticPhrase
           letters={HELLO_CHEF_LETTERS}
-          className="translate-x-[5px] translate-y-[20px] !z-[25]"
+          className="translate-x-[2px] translate-y-[14px] !z-[25]"
         />
       </div>
 
@@ -257,31 +258,42 @@ export default function FridgeClosed({
           aria-label="Open fridge door"
         />
 
-        {/* Upper-left polaroid on fridge door */}
+        {/* Upper-left polaroid */}
         <DoorPolaroid
           slot="left"
           photoUrl={leftPhotoUrl}
           onUpload={onUploadPolaroid}
           magnetCorner="top-left"
-          style={{ top: '14%', left: '14%', transform: 'rotate(-5deg)' }}
+          size="sm"
+          style={{ top: '8%', left: '5%', transform: 'rotate(-5deg)' }}
         />
 
-        {/* Lined notes paper */}
+        {/* Lined notes paper — top right */}
         <DoorNotesPaper
           onClick={onOpenNotes}
           notes={notes}
           shopping={shopping}
-          className="top-[16%] left-[60%] sm:left-[52%] -rotate-6"
+          className="top-[8%] left-[58%] scale-[0.88] origin-top-left -rotate-6"
         />
 
-        {/* Lower polaroid on fridge door */}
+        {/* Bottom row — two polaroids */}
         <DoorPolaroid
           slot="lower"
           photoUrl={lowerPhotoUrl}
           onUpload={onUploadPolaroid}
-          magnetCorner="top-center"
+          magnetCorner="top-left"
+          size="sm"
           className="!z-10"
-          style={{ top: '52%', left: '50%', transform: 'translateX(-50%) rotate(4deg)' }}
+          style={{ top: '48%', left: '6%', transform: 'rotate(4deg)' }}
+        />
+        <DoorPolaroid
+          slot="right"
+          photoUrl={rightPhotoUrl}
+          onUpload={onUploadPolaroid}
+          magnetCorner="top-right"
+          size="sm"
+          className="!z-10"
+          style={{ top: '48%', left: '58%', transform: 'rotate(-4deg)' }}
         />
         <MagneticPhrase letters={I_LOVE_YOU_LETTERS} className="hidden sm:block !z-[25]" />
         <MagneticPhrase letters={I_LOVE_YOU_LETTERS_MOBILE} className="sm:hidden !z-[25]" />
