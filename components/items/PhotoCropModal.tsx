@@ -9,9 +9,17 @@ interface Props {
   imageSrc: string
   onConfirm: (dataUrl: string) => void
   onCancel: () => void
+  maxPx?: number
+  jpegQuality?: number
 }
 
-export default function PhotoCropModal({ imageSrc, onConfirm, onCancel }: Props) {
+export default function PhotoCropModal({
+  imageSrc,
+  onConfirm,
+  onCancel,
+  maxPx = 480,
+  jpegQuality = 0.82,
+}: Props) {
   const [crop, setCrop] = useState({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(1)
   const [croppedArea, setCroppedArea] = useState<Area | null>(null)
@@ -25,7 +33,7 @@ export default function PhotoCropModal({ imageSrc, onConfirm, onCancel }: Props)
     if (!croppedArea) return
     setProcessing(true)
     try {
-      const dataUrl = await cropImageToDataUrl(imageSrc, croppedArea)
+      const dataUrl = await cropImageToDataUrl(imageSrc, croppedArea, maxPx, jpegQuality)
       onConfirm(dataUrl)
     } catch {
       setProcessing(false)

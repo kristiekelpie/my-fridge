@@ -29,6 +29,55 @@ export const FRIDGE_SECTION_LABELS = {
 
 export type FridgeSectionKey = keyof typeof FRIDGE_SECTION_LABELS
 
+/** Top-level place when adding or editing an item (no fridge compartment picker). */
+export type ItemStoragePlace = 'freezer' | 'fridge' | 'pantry' | 'cupboard' | 'wine_fridge'
+
+export const ITEM_STORAGE_PLACES: readonly ItemStoragePlace[] = [
+  'freezer',
+  'fridge',
+  'pantry',
+  'cupboard',
+  'wine_fridge',
+] as const
+
+export const ITEM_STORAGE_PLACE_LABELS: Record<ItemStoragePlace, string> = {
+  freezer: 'Freezer',
+  fridge: 'Fridge',
+  pantry: 'Pantry',
+  cupboard: 'Cupboard',
+  wine_fridge: 'Wine Fridge',
+}
+
+const DEFAULT_FRIDGE_LOCATION: Location = 'shelf1'
+
+export function storagePlaceToFields(
+  place: ItemStoragePlace
+): { storage_area: StorageArea; location: Location } {
+  switch (place) {
+    case 'freezer':
+      return { storage_area: 'fridge', location: 'freezer' }
+    case 'fridge':
+      return { storage_area: 'fridge', location: DEFAULT_FRIDGE_LOCATION }
+    case 'pantry':
+      return { storage_area: 'pantry', location: 'pantry_main' }
+    case 'cupboard':
+      return { storage_area: 'cupboard', location: 'cupboard_main' }
+    case 'wine_fridge':
+      return { storage_area: 'wine_fridge', location: 'wine_main' }
+  }
+}
+
+export function itemToStoragePlace(
+  item: Pick<HouseholdItem, 'storage_area' | 'location'>
+): ItemStoragePlace {
+  if (item.storage_area !== 'fridge') return item.storage_area
+  return item.location === 'freezer' ? 'freezer' : 'fridge'
+}
+
+export function defaultStoragePlaceForArea(area: StorageArea): ItemStoragePlace {
+  return area === 'fridge' ? 'fridge' : area
+}
+
 const sortByExpiry = (a: HouseholdItem, b: HouseholdItem) =>
   new Date(a.expiry_date).getTime() - new Date(b.expiry_date).getTime()
 
@@ -66,6 +115,16 @@ export const LOCATIONS_BY_AREA: Record<StorageArea, Location[]> = {
   pantry: PANTRY_LOCATIONS,
   cupboard: CUPBOARD_LOCATIONS,
   wine_fridge: WINE_LOCATIONS,
+}
+
+export function storagePlaceFromLocation(location: Location): ItemStoragePlace {
+  if (location === 'freezer') return 'freezer'
+  for (const area of STORAGE_AREAS) {
+    if (LOCATIONS_BY_AREA[area].includes(location)) {
+      return area === 'fridge' ? 'fridge' : area
+    }
+  }
+  return 'fridge'
 }
 
 export function normalizeStorageArea(raw?: string | null): StorageArea {

@@ -21,6 +21,8 @@ export async function uploadPhotoDataUrl(
   if (uploadError) throw uploadError
 
   const { data } = supabase.storage.from('item-photos').getPublicUrl(path)
-  seedItemPhotoCache(data.publicUrl, dataUrl)
+  if (folder === 'items') {
+    seedItemPhotoCache(data.publicUrl, dataUrl)
+  }
   return data.publicUrl
 }

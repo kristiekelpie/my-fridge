@@ -5,6 +5,7 @@ import { createClient, isSupabaseConfigured } from '@/lib/supabase/client'
 import { uploadPhotoDataUrl } from '@/lib/uploadPhoto'
 import PhotoCropModal from '@/components/items/PhotoCropModal'
 import { useItemPhotoDisplay } from '@/components/items/useItemPhotoDisplay'
+import { useMealNotePhotoDisplay } from '@/components/kitchen/useMealNotePhotoDisplay'
 import { Image as ImageIcon, Loader2, Upload } from 'lucide-react'
 
 interface Props {
@@ -14,6 +15,7 @@ interface Props {
   onUploadingChange?: (uploading: boolean) => void
   storageFolder?: 'items' | 'meal-notes'
   label?: string
+  cropMaxPx?: number
 }
 
 export default function PhotoUploadField({
@@ -23,12 +25,16 @@ export default function PhotoUploadField({
   onUploadingChange,
   storageFolder = 'items',
   label = 'Photo',
+  cropMaxPx,
 }: Props) {
   const supabase = createClient()
   const fileRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
   const [cropSrc, setCropSrc] = useState<string | null>(null)
-  const displaySrc = useItemPhotoDisplay(photoUrl || null)
+  const resolvedCropMaxPx = cropMaxPx ?? (storageFolder === 'meal-notes' ? 720 : 480)
+  const itemDisplaySrc = useItemPhotoDisplay(photoUrl || null)
+  const mealNoteDisplaySrc = useMealNotePhotoDisplay(photoUrl || null)
+  const displaySrc = storageFolder === 'meal-notes' ? mealNoteDisplaySrc : itemDisplaySrc
 
   function setUploadingState(next: boolean) {
     setUploading(next)
@@ -81,6 +87,8 @@ export default function PhotoUploadField({
           imageSrc={cropSrc}
           onConfirm={handleCropConfirm}
           onCancel={handleCropCancel}
+          maxPx={resolvedCropMaxPx}
+          jpegQuality={storageFolder === 'meal-notes' ? 0.88 : 0.82}
         />
       )}
       <div>

@@ -1,9 +1,9 @@
 'use client'
 
-import { useItemPhotoDisplay } from '@/components/items/useItemPhotoDisplay'
+import { useMealNotePhotoDisplay } from '@/components/kitchen/useMealNotePhotoDisplay'
 
 export default function MealNotePhoto({ photoUrl, className = '' }: { photoUrl?: string | null; className?: string }) {
-  const src = useItemPhotoDisplay(photoUrl)
+  const src = useMealNotePhotoDisplay(photoUrl)
   if (!src) return null
 
   return (

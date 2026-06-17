@@ -9,7 +9,7 @@ import SuggestionNameInput from '@/components/items/SuggestionNameInput'
 import ConstrainedPageShell from '@/components/layout/ConstrainedPageShell'
 import PhotoUploadField from '@/components/items/PhotoUploadField'
 import MealNotePhoto from '@/components/kitchen/MealNotePhoto'
-import { ChevronLeft, Trash2, Pencil } from 'lucide-react'
+import { ChevronLeft, Trash2, Pencil, Plus } from 'lucide-react'
 
 const STORES: Store[] = ['Costco', 'Walmart', 'Albertsons', 'Any', 'Other']
 const CATEGORIES: ShoppingCategory[] = ['food', 'household', 'personal']
@@ -40,6 +40,8 @@ export default function KitchenNotesView({ onBack }: Props) {
   const [addingItem, setAddingItem] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [shoppingSuggestions, setShoppingSuggestions] = useState<ShoppingSuggestion[]>([])
+  const [showAddNoteForm, setShowAddNoteForm] = useState(false)
+  const [showAddShoppingForm, setShowAddShoppingForm] = useState(false)
 
   const fetchNotes = useCallback(async () => {
     if (!isSupabaseConfigured()) return
@@ -96,6 +98,33 @@ export default function KitchenNotesView({ onBack }: Props) {
     }
   }, [fetchNotes, fetchShopping, fetchShoppingSuggestionsList, supabase])
 
+  useEffect(() => {
+    if (tab !== 'notes') setShowAddNoteForm(false)
+    if (tab !== 'shopping') setShowAddShoppingForm(false)
+  }, [tab])
+
+  function resetNoteForm() {
+    setNewNoteTitle('')
+    setNewNoteContent('')
+    setNewNotePhotoUrl('')
+  }
+
+  function closeAddNoteForm() {
+    setShowAddNoteForm(false)
+    resetNoteForm()
+  }
+
+  function resetShoppingForm() {
+    setNewShoppingName('')
+    setNewShoppingStore('Any')
+    setNewShoppingCategory('food')
+  }
+
+  function closeAddShoppingForm() {
+    setShowAddShoppingForm(false)
+    resetShoppingForm()
+  }
+
   async function addNote() {
     if (!newNoteTitle.trim() || !newNoteContent.trim()) return
     if (!isSupabaseConfigured()) {
@@ -118,9 +147,7 @@ export default function KitchenNotesView({ onBack }: Props) {
       setSavingNote(false)
       return
     }
-    setNewNoteTitle('')
-    setNewNoteContent('')
-    setNewNotePhotoUrl('')
+    closeAddNoteForm()
     await fetchNotes()
     setSavingNote(false)
   }
@@ -199,7 +226,7 @@ export default function KitchenNotesView({ onBack }: Props) {
       store: newShoppingStore,
       category: newShoppingCategory,
     })
-    setNewShoppingName('')
+    closeAddShoppingForm()
     await fetchShopping()
     await fetchShoppingSuggestionsList()
     setAddingItem(false)
@@ -268,8 +295,8 @@ export default function KitchenNotesView({ onBack }: Props) {
       </div>
 
       {tab === 'notes' && (
-        <div className="flex-1 flex flex-col min-h-0">
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        <div className="relative flex-1 flex flex-col min-h-0">
+          <div className="flex-1 overflow-y-auto p-4 pb-20 space-y-3">
             {notes.length === 0 && (
               <p className="font-mono text-sm text-slate-400 text-center py-8 tracking-tight">No meal notes yet</p>
             )}
@@ -326,45 +353,71 @@ export default function KitchenNotesView({ onBack }: Props) {
               </div>
             ))}
           </div>
-          <div className="p-4 border-t border-slate-200 shrink-0">
-            <div className="w-full space-y-2">
-              <PhotoUploadField
-                photoUrl={newNotePhotoUrl}
-                onPhotoUrlChange={setNewNotePhotoUrl}
-                onError={setError}
-                onUploadingChange={setUploadingNotePhoto}
-                storageFolder="meal-notes"
-              />
-              <input
-                type="text"
-                value={newNoteTitle}
-                onChange={e => setNewNoteTitle(e.target.value)}
-                placeholder="Title"
-                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <textarea
-                value={newNoteContent}
-                onChange={e => setNewNoteContent(e.target.value)}
-                placeholder="Note…"
-                rows={3}
-                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-              />
-              <button
-                type="button"
-                onClick={addNote}
-                disabled={savingNote || uploadingNotePhoto || !newNoteTitle.trim() || !newNoteContent.trim()}
-                className="w-full bg-stone-900 text-white rounded-xl py-2.5 text-sm font-semibold disabled:opacity-50"
-              >
-                Add Note
-              </button>
+
+          {!showAddNoteForm && (
+            <button
+              type="button"
+              onClick={() => setShowAddNoteForm(true)}
+              className="absolute bottom-4 right-4 z-10 w-12 h-12 bg-stone-900 text-white rounded-full flex items-center justify-center active:scale-95 transition-transform shadow-lg border-2 border-white"
+              aria-label="Add meal note"
+            >
+              <Plus size={22} strokeWidth={2.5} />
+            </button>
+          )}
+
+          {showAddNoteForm && (
+            <div className="absolute inset-0 z-20 flex flex-col bg-white">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 shrink-0">
+                <h3 className="font-mono text-sm font-bold text-stone-900">New Note</h3>
+                <button
+                  type="button"
+                  onClick={closeAddNoteForm}
+                  className="font-mono text-[10px] uppercase tracking-wider text-stone-500 px-2 py-1 active:text-stone-900"
+                >
+                  Cancel
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                <PhotoUploadField
+                  photoUrl={newNotePhotoUrl}
+                  onPhotoUrlChange={setNewNotePhotoUrl}
+                  onError={setError}
+                  onUploadingChange={setUploadingNotePhoto}
+                  storageFolder="meal-notes"
+                />
+                <input
+                  type="text"
+                  value={newNoteTitle}
+                  onChange={e => setNewNoteTitle(e.target.value)}
+                  placeholder="Title"
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <textarea
+                  value={newNoteContent}
+                  onChange={e => setNewNoteContent(e.target.value)}
+                  placeholder="Note…"
+                  rows={5}
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                />
+              </div>
+              <div className="p-4 border-t border-slate-200 shrink-0">
+                <button
+                  type="button"
+                  onClick={addNote}
+                  disabled={savingNote || uploadingNotePhoto || !newNoteTitle.trim() || !newNoteContent.trim()}
+                  className="w-full bg-stone-900 text-white rounded-xl py-2.5 text-sm font-semibold disabled:opacity-50"
+                >
+                  {savingNote ? 'Saving…' : 'Add Note'}
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 
       {tab === 'shopping' && (
-        <div className="flex-1 flex flex-col min-h-0">
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="relative flex-1 flex flex-col min-h-0">
+          <div className="flex-1 overflow-y-auto p-4 pb-20 space-y-4">
             {shopping.length === 0 && (
               <p className="font-mono text-sm text-slate-400 text-center py-8 tracking-tight">Shopping list is empty</p>
             )}
@@ -408,48 +461,80 @@ export default function KitchenNotesView({ onBack }: Props) {
               )
             })}
           </div>
-          <div className="p-4 border-t border-slate-200 shrink-0">
-            <div className="w-full space-y-2">
-              <SuggestionNameInput
-                value={newShoppingName}
-                onChange={setNewShoppingName}
-                suggestions={shoppingSuggestions}
-                onSelectSuggestion={s => {
-                  setNewShoppingName(s.name)
-                  if (s.store) setNewShoppingStore(s.store)
-                  setNewShoppingCategory(s.category)
-                }}
-                getSubLabel={s => `${s.store ?? 'Any'} · ${SHOPPING_CATEGORY_LABELS[s.category]}`}
-                placeholder="Add item…"
-                inputClassName="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                onKeyDown={e => e.key === 'Enter' && addShoppingItem()}
-              />
-              <select
-                value={newShoppingStore}
-                onChange={e => setNewShoppingStore(e.target.value as Store)}
-                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white text-slate-800 focus:outline-none"
-              >
-                {STORES.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-              <select
-                value={newShoppingCategory}
-                onChange={e => setNewShoppingCategory(e.target.value as ShoppingCategory)}
-                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white text-slate-800 focus:outline-none"
-              >
-                {CATEGORIES.map(c => (
-                  <option key={c} value={c}>{SHOPPING_CATEGORY_LABELS[c]}</option>
-                ))}
-              </select>
-              <button
-                type="button"
-                onClick={addShoppingItem}
-                disabled={addingItem || !newShoppingName.trim()}
-                className="w-full bg-stone-900 text-white rounded-xl py-2.5 text-sm font-semibold disabled:opacity-50"
-              >
-                Add Item
-              </button>
+
+          {!showAddShoppingForm && (
+            <button
+              type="button"
+              onClick={() => setShowAddShoppingForm(true)}
+              className="absolute bottom-4 right-4 z-10 w-12 h-12 bg-stone-900 text-white rounded-full flex items-center justify-center active:scale-95 transition-transform shadow-lg border-2 border-white"
+              aria-label="Add shopping item"
+            >
+              <Plus size={22} strokeWidth={2.5} />
+            </button>
+          )}
+
+          {showAddShoppingForm && (
+            <div className="absolute inset-0 z-20 flex flex-col bg-white">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 shrink-0">
+                <h3 className="font-mono text-sm font-bold text-stone-900">New Item</h3>
+                <button
+                  type="button"
+                  onClick={closeAddShoppingForm}
+                  className="font-mono text-[10px] uppercase tracking-wider text-stone-500 px-2 py-1 active:text-stone-900"
+                >
+                  Cancel
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                <SuggestionNameInput
+                  value={newShoppingName}
+                  onChange={setNewShoppingName}
+                  suggestions={shoppingSuggestions}
+                  onSelectSuggestion={s => {
+                    setNewShoppingName(s.name)
+                    if (s.store) setNewShoppingStore(s.store)
+                    setNewShoppingCategory(s.category)
+                  }}
+                  getSubLabel={s => `${s.store ?? 'Any'} · ${SHOPPING_CATEGORY_LABELS[s.category]}`}
+                  placeholder="Add item…"
+                  inputClassName="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onKeyDown={e => e.key === 'Enter' && addShoppingItem()}
+                />
+                <select
+                  value={newShoppingStore}
+                  onChange={e => setNewShoppingStore(e.target.value as Store)}
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white text-slate-800 focus:outline-none"
+                >
+                  {STORES.map(s => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={newShoppingCategory}
+                  onChange={e => setNewShoppingCategory(e.target.value as ShoppingCategory)}
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white text-slate-800 focus:outline-none"
+                >
+                  {CATEGORIES.map(c => (
+                    <option key={c} value={c}>
+                      {SHOPPING_CATEGORY_LABELS[c]}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="p-4 border-t border-slate-200 shrink-0">
+                <button
+                  type="button"
+                  onClick={addShoppingItem}
+                  disabled={addingItem || !newShoppingName.trim()}
+                  className="w-full bg-stone-900 text-white rounded-xl py-2.5 text-sm font-semibold disabled:opacity-50"
+                >
+                  {addingItem ? 'Adding…' : 'Add Item'}
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
       </div>

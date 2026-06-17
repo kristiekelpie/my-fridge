@@ -52,8 +52,11 @@ export const EXPIRY_URGENT_MAX_DAYS = 2
 /** Default cooked food shelf life when not in the freezer (days from today). */
 export const COOKED_FOOD_DAYS = 4
 
+/** Default shelf life for items stored in the freezer (months from today). */
+export const FREEZER_DEFAULT_MONTHS = 6
+
 /** Default cooked food shelf life when stored in the freezer (months from today). */
-export const COOKED_FOOD_FREEZER_MONTHS = 6
+export const COOKED_FOOD_FREEZER_MONTHS = FREEZER_DEFAULT_MONTHS
 
 export interface HouseholdItem {
   id: string
@@ -211,14 +214,20 @@ export function formatLocalDateISO(date: Date): string {
   return `${y}-${m}-${d}`
 }
 
+export function getFreezerDefaultExpiryDate(from = new Date()): string {
+  const base = new Date(from)
+  base.setHours(0, 0, 0, 0)
+  base.setMonth(base.getMonth() + FREEZER_DEFAULT_MONTHS)
+  return formatLocalDateISO(base)
+}
+
 export function getCookedFoodDefaultExpiryDate(location: Location, from = new Date()): string {
   const base = new Date(from)
   base.setHours(0, 0, 0, 0)
   if (location === 'freezer') {
-    base.setMonth(base.getMonth() + COOKED_FOOD_FREEZER_MONTHS)
-  } else {
-    base.setDate(base.getDate() + COOKED_FOOD_DAYS)
+    return getFreezerDefaultExpiryDate(base)
   }
+  base.setDate(base.getDate() + COOKED_FOOD_DAYS)
   return formatLocalDateISO(base)
 }
 

@@ -190,11 +190,17 @@ export function TapToOpenWineMobile() {
   )
 }
 
-export function TapToOpenDesktop() {
+export function TapToOpenDesktop({
+  className = '',
+  style,
+}: {
+  className?: string
+  style?: React.CSSProperties
+}) {
   return (
     <div
-      className="hidden sm:block absolute z-10 pointer-events-none"
-      style={{ top: '30%', right: '100%', marginRight: '0.35rem' }}
+      className={`hidden sm:block absolute z-10 pointer-events-none ${className}`}
+      style={{ top: '30%', right: '100%', marginRight: '0.35rem', ...style }}
     >
       <div className="flex flex-nowrap items-center gap-1">
         <span className="font-mono text-stone-900 text-sm leading-none">✻</span>

@@ -50,7 +50,7 @@ export default function DoorNotesPaper({ onClick, notes, shopping, className = '
           <HeartMagnet />
         </div>
         <div
-          className="w-[5rem] sm:w-[5.5rem] h-[calc(8rem-12px)] sm:h-[calc(8.5rem-12px)] bg-white shadow-[2px_4px_10px_rgba(0,0,0,0.15)] pt-3 px-1.5 pb-1 overflow-hidden"
+          className="w-[6rem] sm:w-[6.75rem] h-[calc(9.25rem-12px)] sm:h-[calc(9.75rem-12px)] bg-white shadow-[2px_4px_10px_rgba(0,0,0,0.15)] pt-3 px-1.5 pb-1 overflow-hidden"
           style={{
             backgroundImage: `repeating-linear-gradient(
               transparent,
@@ -72,17 +72,17 @@ export default function DoorNotesPaper({ onClick, notes, shopping, className = '
           <div className="relative z-10 -rotate-1 text-left pt-0.5">
             <div className="space-y-2">
               <div>
-                <p className="font-biro text-[12px] sm:text-[13px] leading-none text-[#1e3a5f] ml-0.5 font-semibold">
+                <p className="font-biro text-[13px] sm:text-[14px] leading-none text-[#1e3a5f] ml-0.5 font-semibold">
                   Notes
                 </p>
                 {notePreview.length === 0 ? (
-                  <p className="font-hand text-[10px] sm:text-[11px] leading-tight text-stone-400 ml-1 mt-0.5 truncate">—</p>
+                  <p className="font-hand text-[11px] sm:text-[12px] leading-tight text-stone-400 ml-1 mt-0.5 truncate">—</p>
                 ) : (
                   <ul className="mt-0.5 space-y-0.5 ml-1">
                     {notePreview.map(note => (
                       <li
                         key={note.id}
-                        className="font-hand text-[10px] sm:text-[11px] leading-snug text-stone-800 truncate"
+                        className="font-hand text-[11px] sm:text-[12px] leading-snug text-stone-800 truncate"
                       >
                         {truncateLine(noteFirstLine(note), 18)}
                       </li>
@@ -92,17 +92,17 @@ export default function DoorNotesPaper({ onClick, notes, shopping, className = '
               </div>
 
               <div>
-                <p className="font-biro text-[12px] sm:text-[13px] leading-none text-[#1e3a5f] ml-0.5 font-semibold">
+                <p className="font-biro text-[13px] sm:text-[14px] leading-none text-[#1e3a5f] ml-0.5 font-semibold">
                   Shopping List
                 </p>
                 {shopPreview.length === 0 ? (
-                  <p className="font-hand text-[10px] sm:text-[11px] leading-tight text-stone-400 ml-1 mt-0.5 truncate">—</p>
+                  <p className="font-hand text-[11px] sm:text-[12px] leading-tight text-stone-400 ml-1 mt-0.5 truncate">—</p>
                 ) : (
                   <ul className="mt-0.5 space-y-0.5 ml-1">
                     {shopPreview.map(item => (
                       <li
                         key={item.id}
-                        className="font-hand text-[10px] sm:text-[11px] leading-snug text-stone-800 truncate"
+                        className="font-hand text-[11px] sm:text-[12px] leading-snug text-stone-800 truncate"
                       >
                         {truncateLine(item.name, 18)}
                       </li>

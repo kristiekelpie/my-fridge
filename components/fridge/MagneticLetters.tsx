@@ -102,26 +102,26 @@ export const HELLO_CHEF_LETTERS: LetterPlacement[] = [
   { char: 'f', left: '76%', top: '59%', rotate: -2 },
 ]
 
-/** Fridge door — centered between bottom polaroids */
+/** Fridge door — tucked below left polaroid, loose magnet spacing */
 export const I_LOVE_YOU_LETTERS: LetterPlacement[] = [
-  { char: 'i', left: '38%', top: '68%', rotate: -2 },
-  { char: 'l', left: '43%', top: '68%', rotate: 1 },
-  { char: 'o', left: '48%', top: '69%', rotate: -1 },
-  { char: 'v', left: '53%', top: '68%', rotate: 2 },
-  { char: 'e', left: '58%', top: '69%', rotate: -1 },
-  { char: 'y', left: '40%', top: '75%', rotate: 2 },
-  { char: 'o', left: '45%', top: '76%', rotate: -2 },
-  { char: 'u', left: '50%', top: '75%', rotate: 1 },
+  { char: 'i', left: '17%', top: '60%', rotate: -4 },
+  { char: 'l', left: '27%', top: '61%', rotate: 2 },
+  { char: 'o', left: '33%', top: '60%', rotate: -2 },
+  { char: 'v', left: '39%', top: '62%', rotate: 3 },
+  { char: 'e', left: '45%', top: '61%', rotate: -1 },
+  { char: 'y', left: '24%', top: '67%', rotate: 2 },
+  { char: 'o', left: '30%', top: '68%', rotate: -3 },
+  { char: 'u', left: '36%', top: '67%', rotate: 1 },
 ]
 
-/** Mobile — tighter center between bottom polaroids */
+/** Mobile — same phrase, tighter on small doors */
 export const I_LOVE_YOU_LETTERS_MOBILE: LetterPlacement[] = [
-  { char: 'i', left: '34%', top: '67%', rotate: -2 },
-  { char: 'l', left: '39%', top: '67%', rotate: 1 },
-  { char: 'o', left: '44%', top: '68%', rotate: -1 },
-  { char: 'v', left: '49%', top: '67%', rotate: 2 },
-  { char: 'e', left: '54%', top: '68%', rotate: -1 },
-  { char: 'y', left: '36%', top: '74%', rotate: 2 },
-  { char: 'o', left: '41%', top: '75%', rotate: -2 },
-  { char: 'u', left: '46%', top: '74%', rotate: 1 },
+  { char: 'i', left: '13%', top: '64%', rotate: -4 },
+  { char: 'l', left: '23%', top: '65%', rotate: 2 },
+  { char: 'o', left: '29%', top: '64%', rotate: -2 },
+  { char: 'v', left: '35%', top: '66%', rotate: 3 },
+  { char: 'e', left: '41%', top: '65%', rotate: -1 },
+  { char: 'y', left: '20%', top: '71%', rotate: 2 },
+  { char: 'o', left: '26%', top: '72%', rotate: -3 },
+  { char: 'u', left: '32%', top: '71%', rotate: 1 },
 ]

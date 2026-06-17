@@ -57,9 +57,7 @@ export async function fetchDoorPhotoUrls(): Promise<DoorPhotoUrls> {
   return urls
 }
 
-export async function uploadDoorPhoto(slot: PolaroidSlot, file: File): Promise<string> {
-  const dataUrl = await fileToResizedDataUrl(file)
-
+export async function uploadDoorPhotoDataUrl(slot: PolaroidSlot, dataUrl: string): Promise<string> {
   if (!isSupabaseConfigured()) {
     setLocalDoorPhoto(slot, dataUrl)
     seedDoorPhotoCache(dataUrl, dataUrl)
@@ -86,7 +84,6 @@ export async function uploadDoorPhoto(slot: PolaroidSlot, file: File): Promise<s
     .eq('id', 1)
 
   if (updateError) {
-    // Row may not exist yet on fresh projects
     const { error: upsertError } = await supabase
       .from('fridge_door')
       .upsert(
@@ -99,4 +96,9 @@ export async function uploadDoorPhoto(slot: PolaroidSlot, file: File): Promise<s
   setLocalDoorPhoto(slot, publicUrl)
   seedDoorPhotoCache(publicUrl, dataUrl)
   return publicUrl
+}
+
+export async function uploadDoorPhoto(slot: PolaroidSlot, file: File): Promise<string> {
+  const dataUrl = await fileToResizedDataUrl(file)
+  return uploadDoorPhotoDataUrl(slot, dataUrl)
 }

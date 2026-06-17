@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react'
 import { Loader2 } from 'lucide-react'
 import HeartMagnet from './HeartMagnet'
+import PhotoCropModal from '@/components/items/PhotoCropModal'
 import { useDoorPhotoDisplay } from '@/components/fridge/useDoorPhotoDisplay'
 
 export type PolaroidSlot = 'upper' | 'lower' | 'left' | 'right'
@@ -10,8 +11,9 @@ export type PolaroidSlot = 'upper' | 'lower' | 'left' | 'right'
 interface Props {
   slot: PolaroidSlot
   photoUrl: string | null
-  onUpload: (slot: PolaroidSlot, file: File) => Promise<void>
+  onUpload: (slot: PolaroidSlot, dataUrl: string) => Promise<void>
   magnetCorner?: 'top-left' | 'top-right' | 'top-quarter' | 'top-center'
+  magnetStyle?: React.CSSProperties
   size?: 'sm' | 'md'
   className?: string
   style?: React.CSSProperties
@@ -22,6 +24,7 @@ export default function DoorPolaroid({
   photoUrl,
   onUpload,
   magnetCorner = 'top-right',
+  magnetStyle,
   size = 'md',
   className = '',
   style,
@@ -29,20 +32,33 @@ export default function DoorPolaroid({
   const fileRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
+  const [cropSrc, setCropSrc] = useState<string | null>(null)
   const displaySrc = useDoorPhotoDisplay(photoUrl)
 
-  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
+    setUploadError(null)
+    setCropSrc(URL.createObjectURL(file))
+    if (fileRef.current) fileRef.current.value = ''
+  }
+
+  function handleCropCancel() {
+    if (cropSrc) URL.revokeObjectURL(cropSrc)
+    setCropSrc(null)
+  }
+
+  async function handleCropConfirm(dataUrl: string) {
+    if (cropSrc) URL.revokeObjectURL(cropSrc)
+    setCropSrc(null)
     setUploading(true)
     setUploadError(null)
     try {
-      await onUpload(slot, file)
+      await onUpload(slot, dataUrl)
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : 'Upload failed')
     } finally {
       setUploading(false)
-      if (fileRef.current) fileRef.current.value = ''
     }
   }
 
@@ -62,12 +78,19 @@ export default function DoorPolaroid({
 
   return (
     <>
+      {cropSrc && (
+        <PhotoCropModal
+          imageSrc={cropSrc}
+          onConfirm={handleCropConfirm}
+          onCancel={handleCropCancel}
+        />
+      )}
       <input
         ref={fileRef}
         type="file"
         accept="image/*"
         className="hidden"
-        onChange={handleFile}
+        onChange={handleFileSelect}
       />
       <button
         type="button"
@@ -82,7 +105,7 @@ export default function DoorPolaroid({
         <div className="relative">
           <div
             className={magnetClass}
-            style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))' }}
+            style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))', ...magnetStyle }}
           >
             <HeartMagnet size={14} />
           </div>

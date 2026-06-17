@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from 'react'
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/client'
-import { fetchDoorPhotoUrls, uploadDoorPhoto, type DoorPhotoUrls } from '@/lib/fridgeDoor'
+import { fetchDoorPhotoUrls, uploadDoorPhotoDataUrl, type DoorPhotoUrls } from '@/lib/fridgeDoor'
 import { getLocalDoorPhotos } from '@/lib/doorPhotos'
 import { warmDoorPhotoCacheFromSlots } from '@/lib/doorPhotoCache'
 import type { PolaroidSlot } from './DoorPolaroid'
@@ -22,7 +22,7 @@ function urlsEqual(a: DoorPhotoUrls, b: DoorPhotoUrls) {
 
 interface ContextValue {
   photos: DoorPhotoUrls
-  uploadPhoto: (slot: PolaroidSlot, file: File) => Promise<void>
+  uploadPhoto: (slot: PolaroidSlot, dataUrl: string) => Promise<void>
 }
 
 const DoorPhotosContext = createContext<ContextValue | null>(null)
@@ -61,8 +61,8 @@ export function DoorPhotosProvider({ children }: { children: ReactNode }) {
     }
   }, [refresh, supabase])
 
-  const uploadPhoto = useCallback(async (slot: PolaroidSlot, file: File) => {
-    const url = await uploadDoorPhoto(slot, file)
+  const uploadPhoto = useCallback(async (slot: PolaroidSlot, dataUrl: string) => {
+    const url = await uploadDoorPhotoDataUrl(slot, dataUrl)
     setPhotos(prev => ({ ...prev, [slot]: url }))
   }, [])
 

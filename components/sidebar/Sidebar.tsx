@@ -25,6 +25,34 @@ interface Props {
 
 type Panel = 'main' | 'notes' | 'shopping'
 
+function SidebarMenuButton({
+  icon,
+  title,
+  subtitle,
+  onClick,
+}: {
+  icon: string
+  title: string
+  subtitle: string
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="w-full flex items-center gap-3 px-4 py-4 bg-stone-50 border border-stone-900/90 shadow-sm rounded-xl active:bg-stone-100 text-left"
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={icon} alt="" className="w-9 h-9 shrink-0 object-contain" />
+      <div className="flex-1 min-w-0">
+        <div className="font-mono text-sm font-semibold text-slate-800">{title}</div>
+        <div className="font-mono text-xs text-slate-500 mt-0.5">{subtitle}</div>
+      </div>
+      <ChevronRight size={18} className="text-slate-400 shrink-0" />
+    </button>
+  )
+}
+
 export default function Sidebar({
   open,
   onClose,
@@ -44,6 +72,7 @@ export default function Sidebar({
   const [newNotePhotoUrl, setNewNotePhotoUrl] = useState('')
   const [uploadingNotePhoto, setUploadingNotePhoto] = useState(false)
   const [showAddNoteForm, setShowAddNoteForm] = useState(false)
+  const [showAddShoppingForm, setShowAddShoppingForm] = useState(false)
   const [newShoppingName, setNewShoppingName] = useState('')
   const [newShoppingStore, setNewShoppingStore] = useState<Store>('Any')
   const [newShoppingCategory, setNewShoppingCategory] = useState<ShoppingCategory>('food')
@@ -108,6 +137,7 @@ export default function Sidebar({
 
   useEffect(() => {
     if (!open || panel !== 'notes') setShowAddNoteForm(false)
+    if (!open || panel !== 'shopping') setShowAddShoppingForm(false)
   }, [open, panel])
 
   function resetNoteForm() {
@@ -119,6 +149,17 @@ export default function Sidebar({
   function closeAddNoteForm() {
     setShowAddNoteForm(false)
     resetNoteForm()
+  }
+
+  function resetShoppingForm() {
+    setNewShoppingName('')
+    setNewShoppingStore('Any')
+    setNewShoppingCategory('food')
+  }
+
+  function closeAddShoppingForm() {
+    setShowAddShoppingForm(false)
+    resetShoppingForm()
   }
 
   async function addNote() {
@@ -156,7 +197,7 @@ export default function Sidebar({
       store: newShoppingStore,
       category: newShoppingCategory,
     })
-    setNewShoppingName('')
+    closeAddShoppingForm()
     await fetchShopping()
     await fetchShoppingSuggestionsList()
     setAddingItem(false)
@@ -229,67 +270,36 @@ export default function Sidebar({
         {/* Main panel */}
         {panel === 'main' && (
           <div className="flex-1 p-4 space-y-2">
-            <button
+            <SidebarMenuButton
+              icon="/icons/sidebar-notes.png"
+              title="Meal Notes"
+              subtitle={`${notes.length} note${notes.length !== 1 ? 's' : ''}`}
               onClick={() => setPanel('notes')}
-              className="w-full flex items-center justify-between px-4 py-4 bg-stone-50 border border-stone-900/90 shadow-sm rounded-xl active:bg-stone-100 text-left"
-            >
-              <div>
-                <div className="font-mono text-sm font-semibold text-slate-800">Meal Notes</div>
-                <div className="font-mono text-xs text-slate-500 mt-0.5">{notes.length} note{notes.length !== 1 ? 's' : ''}</div>
-              </div>
-              <ChevronRight size={18} className="text-slate-400" />
-            </button>
-            <button
+            />
+            <SidebarMenuButton
+              icon="/icons/sidebar-cart.png"
+              title="Shopping List"
+              subtitle={`${shopping.filter(i => !i.checked).length} remaining`}
               onClick={() => setPanel('shopping')}
-              className="w-full flex items-center justify-between px-4 py-4 bg-stone-50 border border-stone-900/90 shadow-sm rounded-xl active:bg-stone-100 text-left"
-            >
-              <div>
-                <div className="font-mono text-sm font-semibold text-slate-800">Shopping List</div>
-                <div className="font-mono text-xs text-slate-500 mt-0.5">
-                  {shopping.filter(i => !i.checked).length} remaining
-                </div>
-              </div>
-              <ChevronRight size={18} className="text-slate-400" />
-            </button>
-            <button
-              type="button"
+            />
+            <SidebarMenuButton
+              icon="/icons/sidebar-inventory.png"
+              title="Master Inventory"
+              subtitle={`${itemCount} item${itemCount !== 1 ? 's' : ''}`}
               onClick={onOpenInventory}
-              className="w-full flex items-center justify-between px-4 py-4 bg-stone-50 border border-stone-900/90 shadow-sm rounded-xl active:bg-stone-100 text-left"
-            >
-              <div>
-                <div className="font-mono text-sm font-semibold text-slate-800">Master Inventory</div>
-                <div className="font-mono text-xs text-slate-500 mt-0.5">
-                  {itemCount} item{itemCount !== 1 ? 's' : ''}
-                </div>
-              </div>
-              <ChevronRight size={18} className="text-slate-400" />
-            </button>
-            <button
-              type="button"
+            />
+            <SidebarMenuButton
+              icon="/icons/sidebar-expiring.png"
+              title="Expiring Soon"
+              subtitle={`${expiringCount} item${expiringCount !== 1 ? 's' : ''}`}
               onClick={onOpenExpiring}
-              className="w-full flex items-center justify-between px-4 py-4 bg-stone-50 border border-stone-900/90 shadow-sm rounded-xl active:bg-stone-100 text-left"
-            >
-              <div>
-                <div className="font-mono text-sm font-semibold text-slate-800">Expiring Soon</div>
-                <div className="font-mono text-xs text-slate-500 mt-0.5">
-                  {expiringCount} item{expiringCount !== 1 ? 's' : ''}
-                </div>
-              </div>
-              <ChevronRight size={18} className="text-slate-400" />
-            </button>
-            <button
-              type="button"
+            />
+            <SidebarMenuButton
+              icon="/icons/sidebar-history.png"
+              title="History"
+              subtitle={`${historyCount} item${historyCount !== 1 ? 's' : ''}`}
               onClick={openHistory}
-              className="w-full flex items-center justify-between px-4 py-4 bg-stone-50 border border-stone-900/90 shadow-sm rounded-xl active:bg-stone-100 text-left"
-            >
-              <div>
-                <div className="font-mono text-sm font-semibold text-slate-800">History</div>
-                <div className="font-mono text-xs text-slate-500 mt-0.5">
-                  {historyCount} item{historyCount !== 1 ? 's' : ''}
-                </div>
-              </div>
-              <ChevronRight size={18} className="text-slate-400" />
-            </button>
+            />
           </div>
         )}
 
@@ -381,8 +391,8 @@ export default function Sidebar({
 
         {/* Shopping panel */}
         {panel === 'shopping' && (
-          <div className="flex-1 flex flex-col min-h-0">
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div className="relative flex-1 flex flex-col min-h-0">
+            <div className="flex-1 overflow-y-auto p-4 pb-20 space-y-4">
               {shopping.length === 0 && (
                 <p className="font-mono text-sm text-slate-400 text-center py-8 tracking-tight">Shopping list is empty</p>
               )}
@@ -429,48 +439,80 @@ export default function Sidebar({
                 )
               })}
             </div>
-            <div className="p-4 border-t border-slate-200 shrink-0">
-              <div className="w-full space-y-2">
-              <SuggestionNameInput
-                value={newShoppingName}
-                onChange={setNewShoppingName}
-                suggestions={shoppingSuggestions}
-                onSelectSuggestion={s => {
-                  setNewShoppingName(s.name)
-                  if (s.store) setNewShoppingStore(s.store)
-                  setNewShoppingCategory(s.category)
-                }}
-                getSubLabel={s => `${s.store ?? 'Any'} · ${SHOPPING_CATEGORY_LABELS[s.category]}`}
-                placeholder="Add item…"
-                inputClassName="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                onKeyDown={e => e.key === 'Enter' && addShoppingItem()}
-              />
-              <select
-                value={newShoppingStore}
-                onChange={e => setNewShoppingStore(e.target.value as Store)}
-                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white text-slate-800 focus:outline-none"
-              >
-                {STORES.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-              <select
-                value={newShoppingCategory}
-                onChange={e => setNewShoppingCategory(e.target.value as ShoppingCategory)}
-                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white text-slate-800 focus:outline-none"
-              >
-                {CATEGORIES.map(c => (
-                  <option key={c} value={c}>{SHOPPING_CATEGORY_LABELS[c]}</option>
-                ))}
-              </select>
+
+            {!showAddShoppingForm && (
               <button
                 type="button"
-                onClick={addShoppingItem}
-                disabled={addingItem || !newShoppingName.trim()}
-                className="w-full bg-stone-900 text-white rounded-xl py-2.5 text-sm font-semibold disabled:opacity-50"
+                onClick={() => setShowAddShoppingForm(true)}
+                className="absolute bottom-4 right-4 z-10 w-12 h-12 bg-stone-900 text-white rounded-full flex items-center justify-center active:scale-95 transition-transform shadow-lg border-2 border-white"
+                aria-label="Add shopping item"
               >
-                Add Item
+                <Plus size={22} strokeWidth={2.5} />
               </button>
+            )}
+
+            {showAddShoppingForm && (
+              <div className="absolute inset-0 z-20 flex flex-col bg-white">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 shrink-0">
+                  <h3 className="font-mono text-sm font-bold text-stone-900">New Item</h3>
+                  <button
+                    type="button"
+                    onClick={closeAddShoppingForm}
+                    className="font-mono text-[10px] uppercase tracking-wider text-stone-500 px-2 py-1 active:text-stone-900"
+                  >
+                    Cancel
+                  </button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                  <SuggestionNameInput
+                    value={newShoppingName}
+                    onChange={setNewShoppingName}
+                    suggestions={shoppingSuggestions}
+                    onSelectSuggestion={s => {
+                      setNewShoppingName(s.name)
+                      if (s.store) setNewShoppingStore(s.store)
+                      setNewShoppingCategory(s.category)
+                    }}
+                    getSubLabel={s => `${s.store ?? 'Any'} · ${SHOPPING_CATEGORY_LABELS[s.category]}`}
+                    placeholder="Add item…"
+                    inputClassName="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onKeyDown={e => e.key === 'Enter' && addShoppingItem()}
+                  />
+                  <select
+                    value={newShoppingStore}
+                    onChange={e => setNewShoppingStore(e.target.value as Store)}
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white text-slate-800 focus:outline-none"
+                  >
+                    {STORES.map(s => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    value={newShoppingCategory}
+                    onChange={e => setNewShoppingCategory(e.target.value as ShoppingCategory)}
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white text-slate-800 focus:outline-none"
+                  >
+                    {CATEGORIES.map(c => (
+                      <option key={c} value={c}>
+                        {SHOPPING_CATEGORY_LABELS[c]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="p-4 border-t border-slate-200 shrink-0">
+                  <button
+                    type="button"
+                    onClick={addShoppingItem}
+                    disabled={addingItem || !newShoppingName.trim()}
+                    className="w-full bg-stone-900 text-white rounded-xl py-2.5 text-sm font-semibold disabled:opacity-50"
+                  >
+                    {addingItem ? 'Adding…' : 'Add Item'}
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
       </div>

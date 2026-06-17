@@ -8,7 +8,6 @@ import ItemForm from '@/components/items/ItemForm'
 import HistoryView from '@/components/history/HistoryView'
 import MasterInventoryView from '@/components/fridge/MasterInventoryView'
 import ItemListByCategory from '@/components/fridge/ItemListByCategory'
-import ItemListByFridgeSection from '@/components/fridge/ItemListByFridgeSection'
 import ItemListByStorageArea from '@/components/fridge/ItemListByStorageArea'
 import Sidebar from '@/components/sidebar/Sidebar'
 import StorageSwiper from '@/components/storage/StorageSwiper'
@@ -183,10 +182,10 @@ export default function HomePage() {
           />
         ) : fullPageView === 'inventory' ? (
           activeArea === 'fridge' ? (
-            <ItemListByFridgeSection
-              title={inventoryTitle}
-              subtitle={`${areaItems.length} item${areaItems.length !== 1 ? 's' : ''} — freezer & fridge`}
+            <MasterInventoryView
               items={areaItems}
+              scopeArea="fridge"
+              title={inventoryTitle}
               onBack={() => setFullPageView(null)}
               onEdit={handleEdit}
               onDelete={handleDelete}

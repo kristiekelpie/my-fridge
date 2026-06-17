@@ -14,7 +14,7 @@ interface Props {
   lowerPhotoUrl: string | null
   leftPhotoUrl: string | null
   rightPhotoUrl: string | null
-  onUploadPolaroid: (slot: PolaroidSlot, file: File) => Promise<void>
+  onUploadPolaroid: (slot: PolaroidSlot, dataUrl: string) => Promise<void>
   className?: string
 }
 
@@ -228,7 +228,7 @@ export default function FridgeClosed({
           magnetCorner="top-quarter"
           size="sm"
           className="!z-10"
-          style={{ top: '18%', left: '34%', transform: 'rotate(-3deg)' }}
+          style={{ top: '18%', left: '28%', transform: 'rotate(-3deg) scale(1.1)' }}
         />
         <MagneticPhrase
           letters={HELLO_CHEF_LETTERS}
@@ -264,8 +264,9 @@ export default function FridgeClosed({
           photoUrl={leftPhotoUrl}
           onUpload={onUploadPolaroid}
           magnetCorner="top-left"
+          magnetStyle={{ transform: 'translateX(0.7rem)' }}
           size="sm"
-          style={{ top: '8%', left: '5%', transform: 'rotate(-5deg)' }}
+          style={{ top: '8%', left: '9%', transform: 'rotate(-5deg) scale(1.1)' }}
         />
 
         {/* Lined notes paper — top right */}
@@ -273,7 +274,7 @@ export default function FridgeClosed({
           onClick={onOpenNotes}
           notes={notes}
           shopping={shopping}
-          className="top-[8%] left-[58%] scale-[0.88] origin-top-left -rotate-6"
+          className="top-[15%] sm:top-[10%] left-[52%] scale-[0.924] sm:scale-[1.038] origin-top-left -rotate-6"
         />
 
         {/* Bottom row — two polaroids */}
@@ -282,9 +283,10 @@ export default function FridgeClosed({
           photoUrl={lowerPhotoUrl}
           onUpload={onUploadPolaroid}
           magnetCorner="top-left"
+          magnetStyle={{ transform: 'translateX(0.8rem)' }}
           size="sm"
           className="!z-10"
-          style={{ top: '48%', left: '6%', transform: 'rotate(4deg)' }}
+          style={{ top: '43%', left: '10%', transform: 'rotate(4deg) scale(1.1)' }}
         />
         <DoorPolaroid
           slot="right"
@@ -292,8 +294,8 @@ export default function FridgeClosed({
           onUpload={onUploadPolaroid}
           magnetCorner="top-right"
           size="sm"
-          className="!z-10"
-          style={{ top: '48%', left: '58%', transform: 'rotate(-4deg)' }}
+          className="!z-10 max-sm:!top-[59%]"
+          style={{ top: '53%', left: '58%', transform: 'rotate(-4deg) scale(1.1)' }}
         />
         <MagneticPhrase letters={I_LOVE_YOU_LETTERS} className="hidden sm:block !z-[25]" />
         <MagneticPhrase letters={I_LOVE_YOU_LETTERS_MOBILE} className="sm:hidden !z-[25]" />
