@@ -12,6 +12,8 @@ interface Props {
   onCancel: () => void
   maxPx?: number
   jpegQuality?: number
+  /** Crop frame width:height. Defaults to 1 (square). */
+  aspect?: number
 }
 
 export default function PhotoCropModal({
@@ -20,6 +22,7 @@ export default function PhotoCropModal({
   onCancel,
   maxPx = 500,
   jpegQuality = 0.82,
+  aspect = 1,
 }: Props) {
   const [crop, setCrop] = useState({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(1)
@@ -74,7 +77,7 @@ export default function PhotoCropModal({
           image={imageSrc}
           crop={crop}
           zoom={zoom}
-          aspect={1}
+          aspect={aspect}
           onCropChange={setCrop}
           onZoomChange={setZoom}
           onCropComplete={onCropComplete}

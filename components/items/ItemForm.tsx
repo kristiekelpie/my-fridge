@@ -24,6 +24,7 @@ import {
 import { fetchFridgeSuggestions, upsertFridgeSuggestion, type FridgeItemSuggestion } from '@/lib/suggestions'
 import SuggestionNameInput from '@/components/items/SuggestionNameInput'
 import PhotoUploadField from '@/components/items/PhotoUploadField'
+import { PORTRAIT_ITEM_ASPECT, usesPortraitItemLayout } from '@/lib/itemDisplay'
 import { DESKTOP_PAGE_COLUMN_CLASS } from '@/components/layout/ConstrainedPageShell'
 import { ChevronLeft } from 'lucide-react'
 
@@ -80,6 +81,7 @@ export default function ItemForm({ initialItem, storageArea, onSave, onClose }: 
 
   const isEdit = !!initialItem?.id
   const { location } = storagePlaceToFields(storagePlace)
+  const portraitPhoto = usesPortraitItemLayout(category, storagePlace)
 
   useEffect(() => {
     if (isEdit || expiryEditedRef.current) return
@@ -189,6 +191,7 @@ export default function ItemForm({ initialItem, storageArea, onSave, onClose }: 
             onPhotoUrlChange={setPhotoUrl}
             onError={setError}
             onUploadingChange={setUploading}
+            cropAspect={portraitPhoto ? PORTRAIT_ITEM_ASPECT : 1}
           />
 
           <div className="min-w-0">

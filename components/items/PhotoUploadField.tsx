@@ -16,6 +16,8 @@ interface Props {
   storageFolder?: 'items' | 'meal-notes'
   label?: string
   cropMaxPx?: number
+  /** Crop frame width:height. Defaults to 1 (square). */
+  cropAspect?: number
 }
 
 export default function PhotoUploadField({
@@ -26,6 +28,7 @@ export default function PhotoUploadField({
   storageFolder = 'items',
   label = 'Photo',
   cropMaxPx,
+  cropAspect = 1,
 }: Props) {
   const supabase = createClient()
   const fileRef = useRef<HTMLInputElement>(null)
@@ -89,12 +92,17 @@ export default function PhotoUploadField({
           onCancel={handleCropCancel}
           maxPx={resolvedCropMaxPx}
           jpegQuality={storageFolder === 'meal-notes' ? 0.88 : 0.82}
+          aspect={cropAspect}
         />
       )}
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-2">{label}</label>
         <div className="flex gap-3 items-center">
-          <div className="relative w-20 h-20 rounded-xl border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden bg-slate-50 shrink-0">
+          <div
+            className={`relative rounded-xl border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden bg-slate-50 shrink-0 ${
+              cropAspect !== 1 ? 'w-16 aspect-[2/3]' : 'w-20 h-20'
+            }`}
+          >
             {displaySrc ? (
               <img src={displaySrc} alt="" className="w-full h-full object-cover" loading="eager" />
             ) : (

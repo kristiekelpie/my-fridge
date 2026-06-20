@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { HouseholdItem, CATEGORY_LABELS, getExpiryStatus, EXPIRY_STATUS_CONFIG, normalizeCategory, daysUntilExpiry } from '@/lib/types'
+import { usesPortraitItemCard } from '@/lib/itemDisplay'
 import { useItemPhotoDisplay } from '@/components/items/useItemPhotoDisplay'
 import { Pencil, Trash2 } from 'lucide-react'
 
@@ -16,6 +17,7 @@ export default function ItemCard({ item, onEdit, onDelete }: Props) {
   const category = normalizeCategory(item.category)
   const status = getExpiryStatus(item.expiry_date)
   const statusCfg = EXPIRY_STATUS_CONFIG[status]
+  const portrait = usesPortraitItemCard(item)
 
   const diffDays = daysUntilExpiry(item.expiry_date)
   const photoSrc = useItemPhotoDisplay(item.photo_url)
@@ -31,11 +33,11 @@ export default function ItemCard({ item, onEdit, onDelete }: Props) {
 
   return (
     <div
-      className="card-flip"
-      style={{ height: '120px' }}
+      className={`card-flip w-full ${portrait ? 'aspect-[2/3]' : ''}`}
+      style={portrait ? undefined : { height: '120px' }}
       onClick={() => setFlipped(f => !f)}
     >
-      <div className={`card-flip-inner ${flipped ? 'flipped' : ''}`} style={{ height: '120px' }}>
+      <div className={`card-flip-inner h-full ${flipped ? 'flipped' : ''}`}>
         {/* Front face */}
         <div className="card-face rounded-md overflow-hidden bg-white border border-stone-900/90 shadow-sm">
           {photoSrc ? (
